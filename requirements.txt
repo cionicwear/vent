@@ -1,4 +1,4 @@
-flask==0.12.1
+flask==1.0
 pigpio==1.46
 bme680==1.0.5
 adafruit-circuitpython-register==1.8.1
