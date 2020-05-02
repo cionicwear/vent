@@ -1,0 +1,10 @@
+*~
+[#]*[#]
+.\#*
+__pycache__/
+node_modules/
+*.log
+*.py[cod]
+*$py.class
+*.DS_Store
+package-lock.json
