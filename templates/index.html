@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/static/css/index.css">
+    <!-- external modules -->
+    <script type="text/javascript" src="/static/js/jquery-1.11.3.js"></script>
+    <!--<script type="text/javascript" src="/static/js/velocity.min.js"></script>-->
+    <!--<script type="text/javascript" src="/static/js/Chart.bundle.js"></script>-->
+    <!--<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>-->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script type="text/javascript" src="/static/js/basics.js"></script>
+    <script type="text/javascript" src="/static/js/index.js"></script>
+    
+  </head>
+  <body>
+    <div class="body">
+      
+      <div id="demographics">
+	<span class="icon" id="gender">+</span>
+	<span>BW 60 kg</span>
+      </div>
+      
+      <div id="status">
+	<span id="time"></span>
+      </div>
+      
+      <div class="chart" id="pressure"> </div>
+      <div class="chart" id="temperature"> </div>
+      <div class="chart" id="humidity"> </div>
+
+      <div class="stat" id="pstat"></div>
+      <div class="stat" id="tstat"></div>
+      <div class="stat" id="hstat"></div>
+
+      <div id="alarms">
+      </div>
+      
+      <div id="controls">
+      </div>
+      
+    </div>
+  </body>
+</html>

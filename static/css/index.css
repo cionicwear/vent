@@ -1,0 +1,117 @@
+html {
+    color: #fff;
+    background-color: #222;
+    font-size: 24pt;
+    font-family: helvetica;
+    text-align: left;
+}
+
+*{
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+
+.body {
+    display:grid;
+    grid-template-columns: 33% 33% 33%;
+    grid-template-rows: 8% 25% 25% 25% 17%;
+    width: 100vw;
+    height: 100vh;
+}   
+
+.chart {
+    display: block;
+    margin: 5px 5px 5px 20px;
+    background-color: black;
+    border-radius: 10px;
+}
+
+.stat {
+    display: block;
+    margin: 5px;
+    background-color: black;
+    border-radius: 10px;
+}
+
+#controls {
+    display: block;
+    margin: 5px 5px 20px 5px;
+    background-color: #333;
+    border-radius: 10px;
+}
+
+#demographics {
+    padding: 20px 0px 0px 20px;
+}
+
+#status {
+    padding: 20px 0px 0px 20px;
+}
+
+#demographics {
+    grid-column: 1/3;
+    grid-row: 1;
+}
+
+#pressure {
+    grid-column: 1/3;
+    grid-row: 2;
+}
+
+#temperature {
+    grid-column: 1/3;
+    grid-row: 3;
+}
+
+#humidity {
+    grid-column: 1/3;
+    grid-row: 4;
+}
+
+#status {
+    grid-column: 3;
+    row: 1;
+}
+
+#alarms {
+    grid-column: 1;
+    grid-row: 5;
+}
+
+#controls {
+    grid-column: 2/4;
+    grid-row: 5;
+}
+
+#pstat {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+#hstat {
+    grid-column: 3;
+    grid-row: 3;
+}
+
+#tstat {
+    grid-column: 3;
+    grid-row: 4;
+}
+
+.line {
+    fill: none;
+    stroke-width: 3;
+}
+
+#temperature .line {
+    stroke: #2ECC91;
+}
+
+#humidity .line {
+    stroke: #00BFFF;
+}
+
+#pressure .line {
+    stroke: #F5D76E;
+}
