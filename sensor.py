@@ -31,6 +31,7 @@ def sensor_loop(times, pressure, humidity, temperature, idx, count):
     while True:
         if sensor.get_sensor_data():
             idx.value += 1
+            # circle the circular buffer
             if idx.value >= count.value:
                 idx.value = 0
             times[idx.value] = time.time()
@@ -38,7 +39,7 @@ def sensor_loop(times, pressure, humidity, temperature, idx, count):
             humidity[idx.value] = sensor.data.humidity
             temperature[idx.value] = sensor.data.temperature
 
-            # quick hack servotest
+            # on negative pressure start breathing process
             if pressure[idx.value] < 1000:
                 if breathing.value == 0:
                     breathing.value = 1

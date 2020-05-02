@@ -21,8 +21,8 @@ g = GlobalState()
 @app.route('/sensors')
 def sensors():
     curr = g.idx.value
-    last = curr - 60
-    if curr < 60:
+    last = curr - int(request.args.get('count', '20'))
+    if last < 0:
         last = 0
     times = g.times[last:curr]
     values = {
