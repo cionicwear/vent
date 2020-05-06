@@ -1,9 +1,15 @@
 # Sensor Manager
 import time
-import bme680
 from multiprocessing import Process, Queue, Array, Value
-import valve
 import logging
+
+try:
+    import board
+    import bme680
+    import valve
+except:
+    import mock_bme as bme680
+    #import mock_valve as valve
 
 def init_sensor():
     try:
@@ -23,7 +29,18 @@ def init_sensor():
     #sensor.set_gas_heater_duration(150)
     #sensor.select_gas_heater_profile(0)
     return sensor
-    
+
+def check_pressure(pressure, breathing):
+    # on negative pressure start breathing process
+    if pressure < 1000:
+        if breathing.value == 0:
+            breathing.value = 1
+            logging.error('breathing')
+            p = Process(target=valve.breath_relay, args=(breathing,2))
+            p.start()
+        else:
+            logging.error('busy')
+
 
 def sensor_loop(times, pressure, humidity, temperature, idx, count):
     sensor = init_sensor()
@@ -39,16 +56,7 @@ def sensor_loop(times, pressure, humidity, temperature, idx, count):
             humidity[idx.value] = sensor.data.humidity
             temperature[idx.value] = sensor.data.temperature
 
-            # on negative pressure start breathing process
-            if pressure[idx.value] < 1000:
-                if breathing.value == 0:
-                    breathing.value = 1
-                    logging.error('breathing')
-                    p = Process(target=valve.breath_relay, args=(breathing,2))
-                    p.start()
-                else:
-                    logging.error('busy')
-
+            #check_pressure(pressure[idx.value], breathing)
                     
         time.sleep(0.0001)
     

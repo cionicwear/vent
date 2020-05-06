@@ -115,3 +115,12 @@ html {
 #pressure .line {
     stroke: #F5D76E;
 }
+
+#buttons {
+    position: fixed;
+    z-index: 100;
+    bottom: 0;
+    height: 100px;
+    width: 100%;
+    background-color: #aaaaaa;
+}

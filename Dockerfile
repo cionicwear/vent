@@ -13,4 +13,4 @@ EXPOSE 80
 ENV PYTHONPATH /app
 
 # Run app.py when the container launches
-CMD ["python", "local.py"]
+CMD ["python", "vent.py"]

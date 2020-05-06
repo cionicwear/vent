@@ -15,6 +15,9 @@ Vent._humidity = [];
 Vent._temperature = [];
 Vent._last = 0;
 
+Vent._timer = null;
+Vent._requested = 1;
+
 Vent.getdata = function() {
     var dataset = []
     for (var i = 0; i < 20; i++) {
@@ -90,7 +93,7 @@ Vent.max = function(arr, count) {
 }
 
 Vent.check = function() {
-    $.get('/sensors?count=1',
+    $.get('/sensors?count='+Vent._requested,
 	  {},
 	  function(response) {
 	      for (var i=0; i<response.samples; i++) {
@@ -127,6 +130,19 @@ Vent.respond = function(command, payload) {
 
 };
 
+Vent.refresh = function() {
+    if (Vent._timer != null) {
+        clearInterval(Vent._timer);
+        Vent._timer = null;
+        $("#refresh").html("Play");
+    }
+    else {
+        Vent._requested = 1
+        Vent._timer = setInterval(Vent.check, 100);
+        $("#refresh").html("Pause");
+    }
+};
+
 $(document).ready(function() {
     console.log("Vent online");
     Vent.initChart('pressure');
@@ -134,5 +150,6 @@ $(document).ready(function() {
     Vent.initChart('humidity');
 
     // replace with a more efficient update
-    setInterval(Vent.check, 100);
+    $("#refresh").click(Vent.refresh);
+    Vent.refresh();
 });
