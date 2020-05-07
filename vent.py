@@ -2,6 +2,7 @@ import sys
 import signal
 from multiprocessing import Process, Queue, Value, Array
 import sensor
+import valve
 
 PORT = 3000
 
@@ -15,7 +16,9 @@ class GlobalState():
     pressure = Array('d', range(10000))
     humidity = Array('d', range(10000))
     temperature = Array('d', range(10000))
+    breathing = Value('i', 0)
 
+    
 g = GlobalState()
 
 @app.route('/sensors')
@@ -33,7 +36,16 @@ def sensors():
         'humidity' : g.humidity[last:curr]
     }
     return jsonify(values)
-    
+
+@app.route('/breath', methods=['POST'])
+def breath():
+    seconds = int(request.form.get('seconds', '0'))
+    duty = int(request.form.get('duty', '0'))
+    if seconds and duty:
+        g.breathing.value = 1
+        valve.breath_pwm(g.breathing, duty, seconds);
+
+    return jsonify({})
 
 @app.route('/')
 def hello():

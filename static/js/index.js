@@ -117,13 +117,9 @@ Vent.check = function() {
 }
 
 
-Vent.respond = function(command, payload) {
+Vent.post = function(command, payload) {
 
-    $.post('/respond',
-	   {
-	       'command' : command,
-	       'payload' : payload
-	   },
+    $.post(command, payload,
 	   function(response) {
 	       console.log(response);
 	   });
@@ -138,6 +134,7 @@ Vent.refresh = function() {
     }
     else {
         Vent._requested = 1
+	// replace with a more efficient update
         Vent._timer = setInterval(Vent.check, 100);
         $("#refresh").html("Pause");
     }
@@ -149,7 +146,15 @@ $(document).ready(function() {
     Vent.initChart('temperature');
     Vent.initChart('humidity');
 
-    // replace with a more efficient update
     $("#refresh").click(Vent.refresh);
+    $("#breath").click(function() {
+	var seconds = $('#seconds').val()
+	var duty = $('#duty').val()
+	Vent.post('/breath', {
+	    'seconds' : seconds,
+	    'duty' : duty
+	});
+    });
+    
     Vent.refresh();
 });

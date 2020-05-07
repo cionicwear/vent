@@ -56,7 +56,7 @@ def sensor_loop(times, pressure, humidity, temperature, idx, count):
             humidity[idx.value] = sensor.data.humidity
             temperature[idx.value] = sensor.data.temperature
 
-            #check_pressure(pressure[idx.value], breathing)
+            check_pressure(pressure[idx.value], breathing)
                     
         time.sleep(0.0001)
     
