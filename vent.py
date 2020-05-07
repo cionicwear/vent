@@ -2,8 +2,12 @@ import sys
 import signal
 from multiprocessing import Process, Queue, Value, Array
 import sensor
-import valve
 
+try:
+    import valve
+except:
+    import mock_valve as valve
+    
 PORT = 3000
 
 from flask import Flask, request, render_template, jsonify
@@ -42,7 +46,6 @@ def breath():
     seconds = int(request.form.get('seconds', '0'))
     duty = int(request.form.get('duty', '0'))
     if seconds and duty:
-        g.breathing.value = 1
         valve.breath_pwm(g.breathing, duty, seconds);
 
     return jsonify({})

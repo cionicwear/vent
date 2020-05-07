@@ -21,6 +21,8 @@ def breath_relay(breathing, seconds):
     '''
     breathing control for binary solenoid controlled by a relay
     '''
+    breathing.value = 1
+    logging.warning("breathing relay for %ds" % (seconds,))
     relay.value = True
     time.sleep(seconds)
     relay.value = False
@@ -30,11 +32,12 @@ def breath_pwm(breathing, pulse, seconds):
     '''
     breathing control for proportional solenoids
     '''
-    print("breathing %d for %ds" % (pulse, seconds))
+    breathing.value = 1
+    logging.warning("breathing %d for %ds" % (pulse, seconds))
     pi.set_PWM_dutycycle(PWM_PIN, pulse)
     time.sleep(seconds)
     pi.set_PWM_dutycycle(PWM_PIN, 0)
-
+    breathing.value = 0
                     
 if __name__ == '__main__':
     breathing = Value('i', 0)
