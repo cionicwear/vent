@@ -1,6 +1,7 @@
 from RPi import GPIO
 from time import sleep
 from evdev import UInput, ecodes as e
+import logging
 
 CLK_PIN = 22
 DT_PIN = 27
@@ -20,27 +21,29 @@ GPIO.setup(B_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 ui = UInput()
 
 def _keystroke(key):
+    logging.warn(key)
     ui.write(e.EV_KEY, key, 1)  # key down
     ui.write(e.EV_KEY, key, 0)  # key up
     ui.syn()
 
 def knob_callback(c):
-    _keystroke(e.KEY_ENTER)
+    _keystroke(e.KEY_K)
 
 def a_callback(c):
     _keystroke(e.KEY_A)
 
 def b_callback(c):
-    _keystroke(e.KEY_B)
+    _keystroke(e.KEY_S)
 
 def ui_loop():
     counter = 0
     clkLastState = GPIO.input(CLK_PIN)
     swLastState = GPIO.input(SW_PIN)
-    
-    GPIO.add_event_detect(SW_PIN, GPIO.FALLING, callback=knob_callback, bouncetime=300)
-    GPIO.add_event_detect(A_PIN, GPIO.FALLING, callback=a_callback, bouncetime=300)
-    GPIO.add_event_detect(B_PIN, GPIO.FALLING, callback=b_callback, bouncetime=300)
+
+    logging.warn("running UI loop")
+    GPIO.add_event_detect(SW_PIN, GPIO.FALLING, callback=knob_callback, bouncetime=1200)
+    GPIO.add_event_detect(A_PIN, GPIO.FALLING, callback=a_callback, bouncetime=1200)
+    GPIO.add_event_detect(B_PIN, GPIO.FALLING, callback=b_callback, bouncetime=1200)
     
     try:
         while True:
@@ -50,10 +53,10 @@ def ui_loop():
             if clkState != clkLastState:
                 if dtState != clkState:
                     counter += 1
-                    _keystroke(e.KEY_R)
+                    _keystroke(e.KEY_L)
                 else:
                     counter -= 1
-                    _keystroke(e.KEY_L)
+                    _keystroke(e.KEY_J)
                 print(counter)
                 clkLastState = clkState
                 sleep(0.01)
@@ -64,3 +67,4 @@ def ui_loop():
     
 if __name__ == '__main__':
     ui_loop()
+    pass

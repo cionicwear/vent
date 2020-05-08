@@ -117,10 +117,17 @@ html {
 }
 
 #buttons {
-    position: fixed;
-    z-index: 100;
-    bottom: 0;
-    height: 100px;
-    width: 100%;
-    background-color: #aaaaaa;
+    display: none;
+}
+
+@media (min-height: 500px) {
+    #buttons {
+	display: block;
+	position: fixed;
+	z-index: 100;
+	bottom: 0;
+	height: 50px;
+	width: 50%;
+	background-color: #aaaaaa;
+    }
 }

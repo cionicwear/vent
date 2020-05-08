@@ -140,6 +140,27 @@ Vent.refresh = function() {
     }
 };
 
+Vent.alarm = function(msg) {
+    $('#alarms').html(msg);
+};
+
+Vent.silence = function() {
+    $('#alarms').html("");
+}
+
+Vent.listen = function() {
+    document.addEventListener('keydown', function(event) {
+	console.warn(event);
+	if(event.code == "KeyA") {
+            Vent.silence();
+	}
+	else if(event.code == "KeyS") {
+            Vent.alarm('boost');
+	}
+    });
+};  
+
+
 $(document).ready(function() {
     console.log("Vent online");
     Vent.initChart('pressure');
@@ -155,6 +176,7 @@ $(document).ready(function() {
 	    'duty' : duty
 	});
     });
-    
+
+    Vent.listen();
     Vent.refresh();
 });
