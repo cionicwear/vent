@@ -84,7 +84,7 @@ this will start the following processes
 
 Launch Chromium
 ```
-DISPLAY=:0 chromium-browser http://localhost:3000 -kiosk
+DISPLAY=:0 chromium-browser http://localhost:3000 --kiosk --disk-cache-dir=/dev/null
 ```
 
 
