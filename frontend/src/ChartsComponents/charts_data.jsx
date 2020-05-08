@@ -1,4 +1,3 @@
-
 export function DataWrapper(dataX, dataY, color) {
   let line_color = null;
   let border_color = null;

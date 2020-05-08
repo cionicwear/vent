@@ -16,8 +16,8 @@ let base_options = {
           zeroLineColor: "transparent"
         },
         ticks: {
-          suggestedMin: 60,
-          suggestedMax: 125,
+          // suggestedMin: 60,
+          // suggestedMax: 125,
           padding: 20,
           fontColor: null //Font color
         }
@@ -42,10 +42,10 @@ let base_options = {
 export function GetGraphOptions(type, color) {
   var line_color = null;
   let tick = null;
-  if (color == "green") {
+  if (color === "green") {
     line_color = "rgba(0,242,195,0.1)";
     tick ="#9e9e9e";
-  } else if (color == "pink") {
+  } else if (color === "pink") {
     line_color = "rgba(225,78,202,0.1)";
     tick = "#9e9e9e";
   } else{
@@ -57,12 +57,12 @@ export function GetGraphOptions(type, color) {
   new_options["scales"]["yAxes"][0]["ticks"]["fontColor"] = tick;
   new_options["scales"]["xAxes"][0]["ticks"]["fontColor"] = tick;
 
-  if (type == "line"){
+  if (type === "line"){
     new_options["scales"]["xAxes"][0]["barPercentage"] = 1.6
     new_options["scales"]["yAxes"][0]["barPercentage"] = 1.6
     new_options["scales"]["yAxes"][0]["gridLines"]["color"] = "rgba(29,140,248,0.0)";
   }
-  else if (type == "bar"){
+  else if (type === "bar"){
     new_options["scales"]["yAxes"][0]["gridLines"]["color"] = line_color;
   }
 
