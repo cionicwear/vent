@@ -155,6 +155,8 @@ Vent.listen = function() {
             return Vent.alarm('boost');
 	case "KeyJ":
             return Vent.menu_scroll(-1);
+	case "KeyK":
+            return Vent.menu_select();
 	case "KeyL":
             return Vent.menu_scroll(1);
 	case "KeyP":
@@ -178,12 +180,12 @@ Vent.menu = function(choices) {
     Vent._choices = choices;
     Vent._focus = 0;
     Vent.menu_focus();
-}
+};
 
 Vent.menu_focus = function() {
     $('.control').removeClass('focused');
     $('#menu_'+Vent._focus).addClass('focused');
-}
+};
 
 Vent.menu_scroll = function(dir) {
     Vent._focus += dir;
@@ -194,7 +196,17 @@ Vent.menu_scroll = function(dir) {
 	Vent._focus = 0;
     }
     Vent.menu_focus();
-}
+};
+
+Vent.menu_select = function() {
+    // hacky just to show ui
+    switch(Vent._choices[Vent._focus]) {
+    case "VC":
+	return Vent.menu(["TV", "FiO2","PEEP", "BACK"]);
+    default:
+	return Vent.menu(["VC", "PS", "AC"]);
+    }	
+};
 
 $(document).ready(function() {
     console.log("Vent online");
