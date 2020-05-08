@@ -14,7 +14,7 @@ import {
   Col,
 } from "reactstrap";
 
-const MAX_SAMPLES = 100
+const MAX_SAMPLES = 500
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -42,7 +42,6 @@ class Dashboard extends React.Component {
 
   async getSensor() {
     const resp = await getSensorData(1)
-    console.log(resp);
 
     let flowX = this.state.flowX.slice()
     let flowY = this.state.flowY.slice()

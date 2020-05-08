@@ -6,10 +6,10 @@ import logging
 try:
     import board
     import bme680
-    import valve
+    # import valve
 except:
     import mock_bme as bme680
-    import mock_valve as valve
+    # import mock_valve as valve
 
 def init_sensor():
     try:
@@ -35,8 +35,8 @@ def check_pressure(pressure, breathing):
     if pressure < 1000:
         if breathing.value == 0:
             breathing.value = 1
-            p = Process(target=valve.breath_relay, args=(breathing,2))
-            p.start()
+            # p = Process(target=valve.breath_relay, args=(breathing,2))
+            # p.start()
 
 
 def sensor_loop(times, pressure, humidity, temperature, idx, count):

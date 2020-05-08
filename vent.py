@@ -1,12 +1,13 @@
+import os
 import sys
 import signal
 from multiprocessing import Process, Queue, Value, Array
 import sensor
 
-try:
-    import valve
-except:
-    import mock_valve as valve
+# try:
+#     import valve
+# except:
+#     import mock_valve as valve
 
 try:
     import ui
@@ -35,8 +36,8 @@ dictConfig({
 })
 
 
-from flask import Flask, request, render_template, jsonify
-app = Flask(__name__, static_folder='static')
+from flask import Flask, request, render_template, jsonify, send_from_directory
+app = Flask(__name__, static_folder='frontend/build')
 
 class GlobalState():
     idx = Value('i', 0)
@@ -69,14 +70,19 @@ def sensors():
 def breath():
     seconds = int(request.form.get('seconds', '0'))
     duty = int(request.form.get('duty', '0'))
-    if seconds and duty:
-        valve.breath_pwm(g.breathing, duty, seconds);
+    # if seconds and duty:
+    #     valve.breath_pwm(g.breathing, duty, seconds)
 
     return jsonify({})
 
-@app.route('/')
-def hello():
-    return render_template('index.html')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
+    # return render_template('index.html')
 
 
 if __name__ == '__main__':
