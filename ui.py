@@ -20,8 +20,12 @@ GPIO.setup(B_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 #ui
 ui = UInput()
 
+# globals
+g_counter = 0
+g_clk = GPIO.input(CLK_PIN)
+
 def _keystroke(key):
-    logging.warn(key)
+    logging.warning(key)
     ui.write(e.EV_KEY, key, 1)  # key down
     ui.write(e.EV_KEY, key, 0)  # key up
     ui.syn()
@@ -35,36 +39,32 @@ def a_callback(c):
 def b_callback(c):
     _keystroke(e.KEY_S)
 
+def rotary_callback(c):
+    global g_counter
+    global g_clk
+    
+    clk = GPIO.input(CLK_PIN)
+    dt = GPIO.input(DT_PIN)
+    if clk != g_clk:
+        g_clk = clk
+        if dt != clk:
+            g_counter += 1
+            _keystroke(e.KEY_L)
+        else:
+            g_counter -= 1
+            _keystroke(e.KEY_J)
+        
+    
 def ui_loop():
-    counter = 0
-    clkLastState = GPIO.input(CLK_PIN)
-    swLastState = GPIO.input(SW_PIN)
-
-    logging.warn("running UI loop")
     GPIO.add_event_detect(SW_PIN, GPIO.FALLING, callback=knob_callback, bouncetime=1200)
     GPIO.add_event_detect(A_PIN, GPIO.FALLING, callback=a_callback, bouncetime=1200)
     GPIO.add_event_detect(B_PIN, GPIO.FALLING, callback=b_callback, bouncetime=1200)
-    
-    try:
-        while True:
-            clkState = GPIO.input(CLK_PIN)
-            dtState = GPIO.input(DT_PIN)
-            swState = GPIO.input(SW_PIN)
-            if clkState != clkLastState:
-                if dtState != clkState:
-                    counter += 1
-                    _keystroke(e.KEY_L)
-                else:
-                    counter -= 1
-                    _keystroke(e.KEY_J)
-                print(counter)
-                clkLastState = clkState
-                sleep(0.01)
-
-    finally:
-        GPIO.cleanup()
-        ui.close()
+    GPIO.add_event_detect(CLK_PIN, GPIO.FALLING, callback=rotary_callback, bouncetime=2)
+    logging.warning("UI running press anything to exit")
     
 if __name__ == '__main__':
     ui_loop()
-    pass
+    input()
+    GPIO.cleanup()
+    ui.close()
+    

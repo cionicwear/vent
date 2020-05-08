@@ -160,6 +160,15 @@ Vent.listen = function() {
     });
 };  
 
+Vent.menu = function(choices) {
+    var markup = [];
+    for( var i = 0; i < choices.count; i++) {
+	markup.push(DIV({
+	}, choices[i]));
+    }
+    $('#controls').html(markup.join());
+}
+
 
 $(document).ready(function() {
     console.log("Vent online");
@@ -178,5 +187,6 @@ $(document).ready(function() {
     });
 
     Vent.listen();
+    Vent.menu(["VC", "PS", "AC"]);
     Vent.refresh();
 });
