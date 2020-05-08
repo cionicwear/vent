@@ -1,0 +1,40 @@
+{
+  "name": "fuseproject",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@types/react": "^16.8.4",
+    "axios": "^0.18.0",
+    "chart.js": "^2.7.3",
+    "d3-random": "^2.1.0",
+    "lodash": "^4.17.11",
+    "node-sass": "^4.11.0",
+    "package.json": "^2.0.1",
+    "perfect-scrollbar": "^1.4.0",
+    "react": "^16.8.3",
+    "react-chartjs-2": "^2.7.4",
+    "react-dom": "^16.8.3",
+    "react-helmet": "^5.2.0",
+    "react-notification-alert": "0.0.9",
+    "react-router-dom": "^4.3.1",
+    "react-router-hash-link": "^1.2.1",
+    "react-scripts": "^2.1.5",
+    "react-spinners": "^0.5.1",
+    "reactstrap": "^7.1.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}

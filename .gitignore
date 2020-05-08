@@ -8,3 +8,7 @@ node_modules/
 *$py.class
 *.DS_Store
 package-lock.json
+
+# production
+/build
+build/
