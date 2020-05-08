@@ -7,6 +7,11 @@ try:
     import valve
 except:
     import mock_valve as valve
+
+try:
+    import ui
+except:
+    import mock_ui as ui
     
 PORT = 3000
 
@@ -21,7 +26,6 @@ class GlobalState():
     humidity = Array('d', range(10000))
     temperature = Array('d', range(10000))
     breathing = Value('i', 0)
-
     
 g = GlobalState()
 
@@ -57,13 +61,7 @@ def hello():
 
 if __name__ == '__main__':
 
-    # start bluetooth
-    #bleno.on('stateChange', onStateChange)
-    #bleno.on('advertisingStart', onAdvertisingStart)
-    #bleno.start()
-
-    # start sensors
-    
+    # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
         g.times,
         g.pressure,
@@ -71,22 +69,12 @@ if __name__ == '__main__':
         g.temperature,
         g.idx,
         g.count))
-    
     p.start()
-    
+
+    # start ui process
+    u = Process(target=ui.ui_loop)
+    u.start()
+
+    # start app
     app.run(debug=True, host='0.0.0.0', port=PORT)
     
-
-
-#print ('Hit <ENTER> to disconnect')
-
-#if (sys.version_info > (3, 0)):
-#    input()
-#else:
-#    raw_input()
-    
-#bleno.stopAdvertising()
-#bleno.disconnect()
-    
-#print ('terminated.')
-#sys.exit(1)
