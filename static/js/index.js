@@ -35,10 +35,7 @@ Vent.updateData = function(field, data) {
 			   d3.max(data, function(d) { return d.y; })]);
 
     Vent._charts[field].selectAll(".yaxis")
-	.transition()
-        .duration(1000)
         .call(Vent._yaxis[field]);
-
     
     Vent._lines[field] = d3.line()
         .x(function(d) { return Vent._x[field](d.x); }) // set the x values for the line generator
@@ -150,25 +147,54 @@ Vent.silence = function() {
 
 Vent.listen = function() {
     document.addEventListener('keydown', function(event) {
-	console.warn(event);
-	if(event.code == "KeyA") {
-            Vent.silence();
+	
+	switch(event.code) {
+	case "KeyA":
+            return Vent.silence();
+	case "KeyS":
+            return Vent.alarm('boost');
+	case "KeyJ":
+            return Vent.menu_scroll(-1);
+	case "KeyL":
+            return Vent.menu_scroll(1);
+	case "KeyP":
+	    return Vent.refresh();
+	default:
+	    console.warn('unknown event');
 	}
-	else if(event.code == "KeyS") {
-            Vent.alarm('boost');
-	}
+	
     });
 };  
 
 Vent.menu = function(choices) {
     var markup = [];
-    for( var i = 0; i < choices.count; i++) {
+    for( var i = 0; i < choices.length; i++) {
 	markup.push(DIV({
+	    'class' : 'control',
+	    'id' : 'menu_'+i
 	}, choices[i]));
     }
-    $('#controls').html(markup.join());
+    $('#controls').html(markup.join(""));
+    Vent._choices = choices;
+    Vent._focus = 0;
+    Vent.menu_focus();
 }
 
+Vent.menu_focus = function() {
+    $('.control').removeClass('focused');
+    $('#menu_'+Vent._focus).addClass('focused');
+}
+
+Vent.menu_scroll = function(dir) {
+    Vent._focus += dir;
+    if (Vent._focus < 0) {
+	Vent._focus = Vent._choices.length - 1;
+    }
+    if (Vent._focus >= Vent._choices.length) {
+	Vent._focus = 0;
+    }
+    Vent.menu_focus();
+}
 
 $(document).ready(function() {
     console.log("Vent online");
