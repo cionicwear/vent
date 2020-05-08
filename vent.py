@@ -97,10 +97,6 @@ if __name__ == '__main__':
         g.count))
     p.start()
 
-    # start ui process
-    u = Process(target=ui.ui_loop)
-    u.start()
-
     # start app
     app.run(debug=True, host='0.0.0.0', port=PORT)
     

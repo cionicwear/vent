@@ -1,7 +1,7 @@
 html {
     color: #fff;
     background-color: #222;
-    font-size: 24pt;
+    font-size: 12pt;
     font-family: helvetica;
     text-align: left;
 }
@@ -22,21 +22,18 @@ html {
 
 .chart {
     display: block;
-    margin: 5px 5px 5px 20px;
     background-color: black;
     border-radius: 10px;
 }
 
 .stat {
     display: block;
-    margin: 5px;
     background-color: black;
     border-radius: 10px;
 }
 
 #controls {
     display: block;
-    margin: 5px 5px 20px 5px;
     background-color: #333;
     border-radius: 10px;
 }
@@ -101,7 +98,7 @@ html {
 
 .line {
     fill: none;
-    stroke-width: 3;
+    stroke-width: 1;
 }
 
 #temperature .line {
@@ -120,6 +117,22 @@ html {
     display: none;
 }
 
+.control {
+    display: inline-block;
+    width: 25%;
+    height: 100%;
+    border-radius: 10px;
+}
+
+.focused {
+    background-color: #444;
+}
+
+.cell {
+    margin: 2px 2px 2px 2px;
+}
+
+
 @media (min-height: 500px) {
     #buttons {
 	display: block;
@@ -129,5 +142,11 @@ html {
 	height: 50px;
 	width: 50%;
 	background-color: #aaaaaa;
+    }
+    html {
+	font-size: 24pt;
+    }
+    .cell {
+	margin: 5px 5px 5px 5px;
     }
 }

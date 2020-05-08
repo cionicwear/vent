@@ -35,10 +35,7 @@ Vent.updateData = function(field, data) {
 			   d3.max(data, function(d) { return d.y; })]);
 
     Vent._charts[field].selectAll(".yaxis")
-	.transition()
-        .duration(1000)
         .call(Vent._yaxis[field]);
-
     
     Vent._lines[field] = d3.line()
         .x(function(d) { return Vent._x[field](d.x); }) // set the x values for the line generator
@@ -52,7 +49,7 @@ Vent.initChart = function(field) {
 
     // setup margins
     var select = "#"+field
-    var margin = {top: 15, right: 15, bottom: 30, left: 50},
+    var margin = {top: 5, right: 5, bottom: 10, left: 25},
 	width = $(select).innerWidth() - margin.left - margin.right,
 	height = $(select).innerHeight() - margin.top - margin.bottom;
     
@@ -150,16 +147,66 @@ Vent.silence = function() {
 
 Vent.listen = function() {
     document.addEventListener('keydown', function(event) {
-	console.warn(event);
-	if(event.code == "KeyA") {
-            Vent.silence();
+	
+	switch(event.code) {
+	case "KeyA":
+            return Vent.silence();
+	case "KeyS":
+            return Vent.alarm('boost');
+	case "KeyJ":
+            return Vent.menu_scroll(-1);
+	case "KeyK":
+            return Vent.menu_select();
+	case "KeyL":
+            return Vent.menu_scroll(1);
+	case "KeyP":
+	    return Vent.refresh();
+	default:
+	    console.warn('unknown event');
 	}
-	else if(event.code == "KeyS") {
-            Vent.alarm('boost');
-	}
+	
     });
 };  
 
+Vent.menu = function(choices) {
+    var markup = [];
+    for( var i = 0; i < choices.length; i++) {
+	markup.push(DIV({
+	    'class' : 'control',
+	    'id' : 'menu_'+i
+	}, choices[i]));
+    }
+    $('#controls').html(markup.join(""));
+    Vent._choices = choices;
+    Vent._focus = 0;
+    Vent.menu_focus();
+};
+
+Vent.menu_focus = function() {
+    $('.control').removeClass('focused');
+    $('#menu_'+Vent._focus).addClass('focused');
+};
+
+Vent.menu_scroll = function(dir) {
+    Vent._focus += dir;
+    if (Vent._focus < 0) {
+	Vent._focus = Vent._choices.length - 1;
+    }
+    if (Vent._focus >= Vent._choices.length) {
+	Vent._focus = 0;
+    }
+    Vent.menu_focus();
+};
+
+Vent.menu_select = function() {
+    // hacky just to show ui
+    switch(Vent._choices[Vent._focus]) {
+    case "VC":
+	return Vent.menu(["TV", "FiO2","PEEP", "BACK"]);
+    default:
+	return Vent.menu(["VC", "PS", "AC"]);
+    }	
+};
 
 $(document).ready(function() {
     console.log("Vent online");
@@ -178,5 +225,6 @@ $(document).ready(function() {
     });
 
     Vent.listen();
+    Vent.menu(["VC", "PS", "AC"]);
     Vent.refresh();
 });
