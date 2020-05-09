@@ -2,6 +2,12 @@ var Vent = Vent || {};
 
 var MAX_SAMPLES = 500;
 
+Vent.VT = 0
+Vent.FiO2 = 0
+Vent.PEEP = 0
+Vent.RR = 0
+Vent._inFocus = false
+
 Vent._charts = {};
 Vent._x = {};
 Vent._y = {};
@@ -28,8 +34,6 @@ Vent.getdata = function() {
 }
 
 Vent.updateData = function(field, data) {
-
-
     Vent._x[field].domain(d3.extent(data, function(d) { return d.x; }))
     Vent._y[field].domain([d3.min(data, function(d) { return d.y; }),
 			   d3.max(data, function(d) { return d.y; })]);
@@ -89,38 +93,72 @@ Vent.max = function(arr, count) {
     }
 }
 
+// Generic async request. Log non-200 responses to the console.
+//
+// Params:
+//   method - HTTP Verb: GET, POST, PUT, PATCH, DELETE
+//   url - endpoint to fetch
+//   data - JSONable request body
+// Returns: status, JSON body
+//
+Vent.asyncReq = async function(method, url, data = null) {
+    let options = {
+        method,
+        url,
+        credentials: 'include'
+    };
+    if (data != null) {
+        data = JSON.stringify(data);
+        options.headers = {...options, 'Content-Type': 'application/json'};
+        options.body = data;
+    }
+    try {
+        const res = await fetch(url, options);
+        const contentType = res.headers.get("content-type");
+        let resBody;
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            resBody = await res.json();
+        } else {
+            resBody = await res.text();
+        }
+
+        return [res.status, resBody];
+
+    } catch (e) {
+        console.log(`${method} ${url} threw error: ${e}`);
+    }
+};
+
 Vent.check = function() {
     $.get('/sensors?count='+Vent._requested,
-	  {},
-	  function(response) {
-	      for (var i=0; i<response.samples; i++) {
-		  if (response.times[i] > Vent._last) {
-		      Vent._pressure.push({"x": response.times[i], "y": response.pressure[i]});
-		      Vent._temperature.push({"x": response.times[i], "y": response.temperature[i]});
-		      Vent._humidity.push({"x": response.times[i], "y": response.humidity[i]});	      
-		      Vent._last = response.times[i];
-		  }
-		  else {
-		      console.warn('.');
-		  }
-	      }
-	      Vent.max(Vent._pressure, MAX_SAMPLES);
-	      Vent.max(Vent._temperature, MAX_SAMPLES);
-	      Vent.max(Vent._humidity, MAX_SAMPLES);
-	      Vent.updateData('pressure', Vent._pressure);
-	      Vent.updateData('temperature', Vent._humidity);
-	      Vent.updateData('humidity', Vent._temperature);
-	  });
+        {},
+        function(response) {
+            for (var i=0; i<response.samples; i++) {
+                if (response.times[i] > Vent._last) {
+                    Vent._pressure.push({"x": response.times[i], "y": response.pressure[i]});
+                    Vent._temperature.push({"x": response.times[i], "y": response.temperature[i]});
+                    Vent._humidity.push({"x": response.times[i], "y": response.humidity[i]});
+                    Vent._last = response.times[i];
+                }
+                else {
+                    console.warn('.');
+                }
+            }
+            Vent.max(Vent._pressure, MAX_SAMPLES);
+            Vent.max(Vent._temperature, MAX_SAMPLES);
+            Vent.max(Vent._humidity, MAX_SAMPLES);
+            Vent.updateData('pressure', Vent._pressure);
+            Vent.updateData('temperature', Vent._humidity);
+            Vent.updateData('humidity', Vent._temperature);
+    });
 }
-
 
 Vent.post = function(command, payload) {
 
     $.post(command, payload,
-	   function(response) {
-	       console.log(response);
-	   });
-
+        function(response) {
+            console.log(response);
+        });
 };
 
 Vent.refresh = function() {
@@ -147,34 +185,53 @@ Vent.silence = function() {
 
 Vent.listen = function() {
     document.addEventListener('keydown', function(event) {
-	
-	switch(event.code) {
-	case "KeyA":
-            return Vent.silence();
-	case "KeyS":
-            return Vent.alarm('boost');
-	case "KeyJ":
-            return Vent.menu_scroll(-1);
-	case "KeyK":
-            return Vent.menu_select();
-	case "KeyL":
-            return Vent.menu_scroll(1);
-	case "KeyP":
-	    return Vent.refresh();
-	default:
-	    console.warn('unknown event');
-	}
-	
+        switch(event.code) {
+            case "KeyA":
+                return Vent.silence();
+            case "KeyS":
+                return Vent.alarm('boost');
+            case "KeyJ":
+                if (Vent._inFocus) {
+                    Vent.decrementValue();
+                    break;
+                }
+                else return Vent.menu_scroll(-1);
+            case "KeyK":
+                if (Vent._inFocus) {
+                    Vent.updateSettings();
+                    Vent._inFocus = false;
+                    break;
+                }
+                else return Vent.menu_select();
+            case "KeyL":
+                if (Vent._inFocus) {
+                    Vent.incrementValue();
+                    break;
+                }
+                else return Vent.menu_scroll(1);
+            case "KeyP":
+                return Vent.refresh();
+            default:
+                console.warn('unknown event');
+        }
     });
 };  
 
 Vent.menu = function(choices) {
     var markup = [];
     for( var i = 0; i < choices.length; i++) {
-	markup.push(DIV({
-	    'class' : 'control',
-	    'id' : 'menu_'+i
-	}, choices[i]));
+        let val = '';
+        if (typeof Vent[choices[i]] !== 'undefined') val = Vent[choices[i]];
+        console.log(val);
+        markup.push(
+            DIV({
+            'class' : 'control',
+            'id' : 'menu_'+i
+            },
+                DIV({"class":"pinputcell"}, choices[i]) +
+                DIV({'id': choices[i]}, `${val}`)
+            )
+        );
     }
     $('#controls').html(markup.join(""));
     Vent._choices = choices;
@@ -201,12 +258,47 @@ Vent.menu_scroll = function(dir) {
 Vent.menu_select = function() {
     // hacky just to show ui
     switch(Vent._choices[Vent._focus]) {
-    case "VC":
-	return Vent.menu(["TV", "FiO2","PEEP", "BACK"]);
-    default:
-	return Vent.menu(["VC", "PS", "AC"]);
+        case 'VT':
+        case 'FiO2':
+        case 'PEEP':
+        case 'RR':
+            Vent._inFocus = true
+            break
+        case "VC":
+            return Vent.menu(["VT", "FiO2","PEEP", "RR", "BACK"]);
+        case "BACK":
+        default:
+            return Vent.menu(["VC", "PS", "AC"]);
     }	
 };
+
+Vent.decrementValue = () => {
+    const field = Vent._choices[Vent._focus];
+    if (Vent[field] == 0) return;
+    // TODO: custom increments based on field type
+    switch(field){
+        default:
+            Vent[field] -= 1;
+    }
+    $(`.control #${field}`).text(Vent[field]);
+}
+
+Vent.incrementValue = () => {
+    const field = Vent._choices[Vent._focus];
+    // TODO: custom increments based on field type
+    switch(field){
+        default:
+            Vent[field] += 1;
+    }
+    $(`.control #${field}`).text(Vent[field]);
+}
+
+Vent.updateSettings = () => {
+    const field = Vent._choices[Vent._focus];
+    const data = { [field]: Vent[field] };
+    console.log(data);
+    Vent.asyncReq('POST', '/settings', data);
+}
 
 $(document).ready(function() {
     console.log("Vent online");
