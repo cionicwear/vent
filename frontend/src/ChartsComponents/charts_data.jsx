@@ -25,21 +25,12 @@ export function DataWrapper(dataX, dataY, color) {
       labels: dataX,
       datasets: [
         {
-          label: "Value",
-          fill: true,
-          backgroundColor: gradientStroke,
           borderColor: border_color,
           borderWidth: 2,
-          borderDash: [],
-          borderDashOffset: 0.0,
-          pointBackgroundColor: border_color,
-          pointBorderColor: "rgba(255,255,255,0)",
-          pointHoverBackgroundColor: border_color,
-          pointBorderWidth: 20,
-          pointHoverRadius: 4,
-          pointHoverBorderWidth: 15,
           pointRadius: 0,
-          data: dataY
+          lineTension: 0,
+          data: dataY,
+          fill: false
         }
       ]
     };

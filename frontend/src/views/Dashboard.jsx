@@ -136,12 +136,12 @@ class Dashboard extends React.Component {
     return (
         <div className="content">
           <Row>
-          <Col lg="7">
+          <Col xs="7">
             <h3>BW 60kg</h3>
             </Col>
           </Row>
           <Row>
-            <Col lg="7">
+            <Col xs="7">
               <Card className="card-chart">
                 <CardHeader>
                   <Row>
@@ -162,7 +162,7 @@ class Dashboard extends React.Component {
             </Col>
           </Row>
           <Row>
-            <Col lg="7">
+            <Col xs="7">
               <Card className="card-chart">
                 <CardHeader>
                   <h5 className="card-category"></h5>
@@ -175,7 +175,7 @@ class Dashboard extends React.Component {
             </Col>
           </Row>
           <Row>
-            <Col lg="7">
+            <Col xs="7">
               <Card className="card-chart">
                 <CardHeader>
                   <h5 className="card-category"></h5>

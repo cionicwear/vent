@@ -13,11 +13,10 @@ let base_options = {
         gridLines: {
           drawBorder: false,
           color: null, // this changes
-          zeroLineColor: "transparent"
+          zeroLineColor: "transparent",
+          display: false
         },
         ticks: {
-          // suggestedMin: 60,
-          // suggestedMax: 125,
           padding: 20,
           fontColor: null //Font color
         }
@@ -28,7 +27,8 @@ let base_options = {
         gridLines: {
           drawBorder: false,
           color: null, // Another Color
-          zeroLineColor: "transparent"
+          zeroLineColor: "transparent",
+          display: false
         },
         ticks: {
           display: false
@@ -55,7 +55,6 @@ export function GetGraphOptions(type, color) {
   var new_options = JSON.parse(JSON.stringify(base_options))
   new_options["scales"]["xAxes"][0]["gridLines"]["color"] = line_color;
   new_options["scales"]["yAxes"][0]["ticks"]["fontColor"] = tick;
-  new_options["scales"]["xAxes"][0]["ticks"]["fontColor"] = tick;
 
   if (type === "line"){
     new_options["scales"]["xAxes"][0]["barPercentage"] = 1.6
