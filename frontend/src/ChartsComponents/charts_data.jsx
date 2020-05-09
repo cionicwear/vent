@@ -26,11 +26,13 @@ export function DataWrapper(dataX, dataY, color) {
       datasets: [
         {
           borderColor: border_color,
-          borderWidth: 2,
-          pointRadius: 0,
+          pointRadius: 1,
           lineTension: 0,
           data: dataY,
-          fill: false
+          fill: false,
+          // showLine: false,
+          minRotation: 10,
+          maxRotation: 10
         }
       ]
     };
