@@ -37,7 +37,7 @@ dictConfig({
 
 
 from flask import Flask, request, render_template, jsonify, send_from_directory
-app = Flask(__name__, static_folder='frontend/build')
+app = Flask(__name__, static_folder='static')
 
 class GlobalState():
     idx = Value('i', 0)
@@ -78,11 +78,11 @@ def breath():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists(app.static_folder + '/' + path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, 'index.html')
-    # return render_template('index.html')
+    # if path != "" and os.path.exists(app.static_folder + '/' + path):
+    #     return send_from_directory(app.static_folder, path)
+    # else:
+    #     return send_from_directory(app.static_folder, 'index.html')
+    return render_template('index.html')
 
 
 if __name__ == '__main__':

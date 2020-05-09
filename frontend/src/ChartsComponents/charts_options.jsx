@@ -1,6 +1,5 @@
 // Base Options
 
-
 let base_options = {
   animation: {
     duration: 0 // general animation time

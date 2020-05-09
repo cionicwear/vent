@@ -30,7 +30,6 @@ export function DataWrapper(dataX, dataY, color) {
           lineTension: 0,
           data: dataY,
           fill: false,
-          // showLine: false,
           minRotation: 10,
           maxRotation: 10
         }

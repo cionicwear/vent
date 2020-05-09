@@ -28,15 +28,12 @@ Vent.getdata = function() {
 }
 
 Vent.updateData = function(field, data) {
-
-
     Vent._x[field].domain(d3.extent(data, function(d) { return d.x; }))
     Vent._y[field].domain([d3.min(data, function(d) { return d.y; }),
 			   d3.max(data, function(d) { return d.y; })]);
 
     Vent._charts[field].selectAll(".yaxis")
         .call(Vent._yaxis[field]);
-    
     Vent._lines[field] = d3.line()
         .x(function(d) { return Vent._x[field](d.x); }) // set the x values for the line generator
         .y(function(d) { return Vent._y[field](d.y); }) // set the y values for the line generator

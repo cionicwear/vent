@@ -1,8 +1,9 @@
 import React from 'react';
-import { randomUniform } from 'd3-random';
-
+import { Line, Bar } from "react-chartjs-2";
 import { LineChart } from "../ChartsComponents/ChartsWrapper.js"
 import { getSensorData } from '../api.js';
+import {GetGraphOptions} from "../ChartsComponents/charts_options.jsx"
+import {DataWrapper, DoubleDataWrapper} from "../ChartsComponents/charts_data.jsx";
 
 // reactstrap components
 import {
@@ -19,15 +20,18 @@ const MAX_SAMPLES = 500
 class Dashboard extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      last: 0,
-      pressureX: [],
-      pressureY: [],
-      flowX: [],
-      flowY: [],
-      volumeX: [],
-      volumeY: []
-    };
+    this.pressure = {'x': [],  'y': []}
+    this.pressureChart = React.createRef();
+
+    this.flow = {'x': [],  'y': []}
+    this.flowChart = React.createRef();
+
+    this.volume = {'x': [],  'y': []}
+    this.volumeChart = React.createRef();
+
+    this.last = 0
+
+    this.updateChart = this.updateChart.bind(this);
 
     setInterval(() => {
       this.getSensor()
@@ -42,42 +46,22 @@ class Dashboard extends React.Component {
 
   async getSensor() {
     const resp = await getSensorData(1)
-
-    let flowX = this.state.flowX.slice()
-    let flowY = this.state.flowY.slice()
-
-    let volumeX = this.state.volumeX.slice()
-    let volumeY = this.state.volumeY.slice()
-
-    let pressureX = this.state.pressureX.slice()
-    let pressureY = this.state.pressureY.slice()
-
     for (let i=0; i<resp.samples; i++) {
-      if (resp.times[i] > this.state.last) {
-        flowX.push(resp.times[i])
-        flowY.push(resp.humidity[i])
-        volumeX.push(resp.times[i])
-        volumeY.push(resp.temperature[i])
-        pressureX.push(resp.times[i])
-        pressureY.push(resp.pressure[i])
-
-        if (resp.times[i] > this.state.last) this.setState({ last: resp.times[i] })
+      if (resp.times[i] > this.last) {
+        this.flow['x'].push(resp.times[i])
+        this.flow['y'].push(resp.humidity[i])
+        this.volume['x'].push(resp.times[i])
+        this.volume['y'].push(resp.temperature[i])
+        this.pressure['x'].push(resp.times[i])
+        this.pressure['y'].push(resp.pressure[i])
+        if (resp.times[i] > this.last) this.last = resp.times[i]
       }
     }
-    
 
-    // adjust all arr
-    this.adjustArray(flowX, MAX_SAMPLES)
-    this.adjustArray(flowY, MAX_SAMPLES)
-    this.adjustArray(volumeX, MAX_SAMPLES)
-    this.adjustArray(volumeY, MAX_SAMPLES)
-    this.adjustArray(pressureX, MAX_SAMPLES)
-    this.adjustArray(pressureY, MAX_SAMPLES)
-
-    // update state (and graphs)
-    this.updateFlow(flowX, flowY)
-    this.updateVolume(volumeX, volumeY)
-    this.updatePressure(pressureX, pressureY)
+    // update graphs
+    this.updateFlow()
+    this.updateVolume()
+    this.updatePressure()
   }
 
   adjustArray(arr, count) {
@@ -86,51 +70,31 @@ class Dashboard extends React.Component {
     }
   }
 
-  async updateFlow(flowX, flowY) {
-    this.setState({ flowX });
-    this.setState({ flowY });
+  async updateFlow() {
+    this.adjustArray(this.flow['x'], MAX_SAMPLES)
+    this.adjustArray(this.flow['y'], MAX_SAMPLES)
+    this.updateChart(this.flowChart.current.chartInstance, this.flow['x'], this.flow['y'])
   }
 
-  async updateVolume(volumeX, volumeY) {
-    this.setState({ volumeX });
-    this.setState({ volumeY });
+  async updateVolume() {
+    this.adjustArray(this.volume['x'], MAX_SAMPLES)
+    this.adjustArray(this.volume['y'], MAX_SAMPLES)
+    this.updateChart(this.volumeChart.current.chartInstance, this.volume['x'], this.volume['y'])
   }
 
-  async updatePressure(pressureX,  pressureY) {
-    this.setState({ pressureX });
-    this.setState({ pressureY });
+  async updatePressure() {
+    this.adjustArray(this.pressure['x'], MAX_SAMPLES)
+    this.adjustArray(this.pressure['y'], MAX_SAMPLES)
+    this.updateChart(this.pressureChart.current.chartInstance, this.pressure['x'], this.pressure['y'])
   }
 
-  getdata() {
-    const x = []
-    const y = []
-    for (var i = 0; i < 20; i++) {
-      const yVal = randomUniform(-50,50)()
-      x.push(i)
-      y.push(yVal)
-    }
-    this.setState({
-      flowX: x,
-      flowY: y,
-      pressureX: x,
-      pressureY: y,
-      volumeX: x,
-      volumeY: y
-    })
-  }
-
-  getd() {
-    const yVal = randomUniform(-50,50)()
-    var flowX = this.state.flowX.slice();
-    flowX.splice(0, 1)
-    flowX.push(flowX[flowX.length - 1] + 1)
-    this.setState({ flowX });
-
-    var flowY = this.state.flowY.slice();
-    flowY.splice(0, 1)
-    flowY.push(yVal)
-    this.setState({ flowY });
-  }
+  updateChart(chart, label, data) {
+    chart.data.labels = label
+    chart.data.datasets.forEach((dataset) => {
+        dataset.data = data;
+    });
+    chart.update();
+}
 
   render() {
     return (
@@ -152,10 +116,15 @@ class Dashboard extends React.Component {
                 </CardHeader>
                 <CardBody>
                   <div className="chart-area">
-                    <LineChart
-                      dataX={this.state.pressureX}
-                      dataY={this.state.pressureY}
-                    />
+                  <CardBody>
+                    <div className="chart-area">
+                      <Line
+                        ref={this.pressureChart}
+                        data={DataWrapper(this.pressure['x'], this.pressure['y'])}
+                        options={GetGraphOptions("line")}
+                      />
+                    </div>
+                  </CardBody>
                   </div>
                 </CardBody>
               </Card>
@@ -170,7 +139,15 @@ class Dashboard extends React.Component {
                     Flow
                   </CardTitle>
                 </CardHeader>
-                <LineChart color="green" dataX={this.state.flowX} dataY={this.state.flowY} />
+                  <CardBody>
+                    <div className="chart-area">
+                      <Line
+                        ref={this.flowChart}
+                        data={DataWrapper(this.flow['x'], this.flow['y'], "green")}
+                        options={GetGraphOptions("line", this.props.color )}
+                      />
+                    </div>
+                  </CardBody>
               </Card>
             </Col>
           </Row>
@@ -183,7 +160,15 @@ class Dashboard extends React.Component {
                     Volume
                   </CardTitle>
                 </CardHeader>
-                <LineChart color="pink" dataX={this.state.volumeX} dataY={this.state.volumeY}/>
+                <CardBody>
+                    <div className="chart-area">
+                      <Line
+                        ref={this.volumeChart}
+                        data={DataWrapper(this.volume['x'], this.volume['y'], "pink")}
+                        options={GetGraphOptions("line", "pink" )}
+                      />
+                    </div>
+                  </CardBody>
               </Card>
             </Col>
           </Row>
