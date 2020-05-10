@@ -42,9 +42,9 @@ class GlobalState():
     idx = Value('i', 0)
     count = Value('i', 10000)
     times = Array('d', range(10000))
-    pressure = Array('d', range(10000))
-    humidity = Array('d', range(10000))
-    temperature = Array('d', range(10000))
+    tank_pressure = Array('d', range(10000))
+    breath_pressure = Array('d', range(10000))
+    flow = Array('d', range(10000))
     breathing = Value('i', 0)
     
 g = GlobalState()
@@ -59,9 +59,9 @@ def sensors():
     values = {
         'samples' : len(times),
         'times' : times,
-        'pressure' : g.pressure[last:curr],
-        'temperature' : g.temperature[last:curr],
-        'humidity' : g.humidity[last:curr]
+        'pressure' : g.tank_pressure[last:curr],
+        'humidity' : g.breath_pressure[last:curr],
+        'temperature' : g.flow[last:curr]
     }
     return jsonify(values)
 
@@ -84,9 +84,9 @@ if __name__ == '__main__':
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
         g.times,
-        g.pressure,
-        g.humidity,
-        g.temperature,
+        g.tank_pressure,
+        g.breath_pressure,
+        g.flow,
         g.idx,
         g.count))
     p.start()

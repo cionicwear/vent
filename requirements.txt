@@ -5,5 +5,9 @@ evdev==1.3.0
 adafruit-circuitpython-register==1.8.1
 adafruit-circuitpython-busdevice==4.3.1
 adafruit-circuitpython-lps35hw==1.2.1
+adafruit-circuitpython-pca9685==3.3.1
+adafruit-circuitpython-motor==3.1.1
+adafruit-circuitpython-motorkit==1.5.1
+adafruit-circuitpython-ads1x15==2.2.1
 Adafruit-Blinka==4.7.0
 
