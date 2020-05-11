@@ -27,9 +27,55 @@
       <div class="chart cell" id="temperature"> </div>
       <div class="chart cell" id="humidity"> </div>
 
-      <div class="stat cell" id="pstat"></div>
-      <div class="stat cell" id="tstat"></div>
-      <div class="stat cell" id="hstat"></div>
+      <div class="stat cell" id="pstat">
+        <div class="left"> 
+          <h3 class="sensor-stat-label">Ppeak</h3>
+          <div>
+            <h1 class="stat-value">21</h1>
+            <h1 class="stat-value-unit">cmH<sub>2</sub>O</h1>
+          </div>
+        </div>
+        <div class="right">
+          <h3 class="sensor-stat-label">PEEP</h3>
+          <div>
+            <h1 class="stat-value">9.5</h1>
+            <h1 class="stat-value-unit">cmH<sub>2</sub>O</h1>
+          </div>
+        </div>
+      </div>
+      <div class="stat cell" id="tstat">
+        <div class="left"> 
+          <h3 class="sensor-stat-label">VT</h3>
+          <div>
+            <h1 class="stat-value">334</h1>
+            <h1 class="stat-value-unit">ml</h1>
+          </div>
+        </div>
+        <div class="right">
+          <h3 class="sensor-stat-label">PEEP</h3>
+          <div>
+            <h1 class="stat-value">5.5</h1>
+            <h1 class="stat-value-unit">ml/kg</h1>
+          </div>
+        </div>
+      </div>
+      <div class="stat cell" id="hstat">
+        <div class="left"> 
+          <h3 class="sensor-stat-label">I:E Ratio</h3>
+          <h1 class="">1:2</h1>
+        </div>
+        <div class="right">
+          <div class="top">
+            <h3 class="sensor-stat-label">FiO<sub>2</sub></h3>
+            <h3 class="value">50</h3>
+            <h3 class="unit">%</h3>
+          </div>
+          <div class="bottom">
+            <h3 class="sensor-stat-label">RR</h3>
+            <h3 class="value">15</h3>
+          </div>
+        </div>
+      </div>
 
       <div id="alarms">
       </div>

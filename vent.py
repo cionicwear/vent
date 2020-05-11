@@ -1,5 +1,6 @@
 import sys
 import signal
+import logging
 from multiprocessing import Process, Queue, Value, Array
 import sensor
 
@@ -46,6 +47,10 @@ class GlobalState():
     breath_pressure = Array('d', range(10000))
     flow = Array('d', range(10000))
     breathing = Value('i', 0)
+    rr = Value('i', 0)
+    vt = Value('i', 0)
+    fio2 = Value('i', 0)
+    peep = Value('i', 0)
     
 g = GlobalState()
 
@@ -65,12 +70,28 @@ def sensors():
     }
     return jsonify(values)
 
+@app.route('/settings', methods=['POST'])
+def update_sensors():
+    if 'VT' in request.json:
+        g.vt = request.json['VT']
+
+    if 'RR' in request.json:
+        g.rr = request.json['RR']
+
+    if 'PEEP' in request.json:
+        g.peep = request.json['PEEP']
+
+    if 'FiO2' in request.json:
+        g.fio2 = request.json['FiO2']
+
+    return jsonify({})
+
 @app.route('/breath', methods=['POST'])
 def breath():
     seconds = int(request.form.get('seconds', '0'))
     duty = int(request.form.get('duty', '0'))
     if seconds and duty:
-        valve.breath_pwm(g.breathing, duty, seconds);
+        valve.breath_pwm(g.breathing, duty, seconds)
 
     return jsonify({})
 
