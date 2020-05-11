@@ -2,11 +2,9 @@ var Vent = Vent || {};
 
 var MAX_SAMPLES = 500;
 
-Vent.VT = 0
-Vent.FiO2 = 0
-Vent.PEEP = 0
-Vent.RR = 0
+Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0}
 Vent._inFocus = false
+Vent.sensorReadings = {'Ppeak': 0, 'PEEP': 0, 'VT': 0, 'RR': 0, 'FiO2': 0, 'IE': 0}
 
 Vent._charts = {};
 Vent._x = {};
@@ -274,13 +272,13 @@ Vent.menu_select = function() {
 
 Vent.decrementValue = () => {
     const field = Vent._choices[Vent._focus];
-    if (Vent[field] == 0) return;
+    if (Vent['settings'][field] == 0) return;
     // TODO: custom increments based on field type
     switch(field){
         default:
-            Vent[field] -= 1;
+            Vent['settings'][field] -= 1;
     }
-    $(`.control #${field}`).text(Vent[field]);
+    $(`.control #${field}`).text(Vent['settings'][field]);
 }
 
 Vent.incrementValue = () => {
@@ -288,14 +286,14 @@ Vent.incrementValue = () => {
     // TODO: custom increments based on field type
     switch(field){
         default:
-            Vent[field] += 1;
+            Vent['settings'][field] += 1;
     }
-    $(`.control #${field}`).text(Vent[field]);
+    $(`.control #${field}`).text(Vent['settings'][field]);
 }
 
 Vent.updateSettings = () => {
     const field = Vent._choices[Vent._focus];
-    const data = { [field]: Vent[field] };
+    const data = { [field]: Vent['settings'][field] };
     console.log(data);
     Vent.asyncReq('POST', '/settings', data);
 }
