@@ -2,7 +2,6 @@ import sys
 import signal
 import logging
 from multiprocessing import Process, Queue, Value, Array
-import sensor
 
 try:
     import valve
@@ -13,6 +12,12 @@ try:
     import ui
 except:
     import mock_ui as ui
+
+try:
+    import sensor
+except:
+    import mock_sensor as sensor
+
     
 PORT = 3000
 

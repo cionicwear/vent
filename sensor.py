@@ -3,19 +3,15 @@ import time
 from multiprocessing import Process, Queue, Array, Value
 import logging
 
+import board
+import busio
+import bme680
+import adafruit_lps35hw as LPS
+import adafruit_ads1x15.ads1115 as ADS
+from adafruit_ads1x15.analog_in import AnalogIn
+import valve
 
-try:
-    import board
-    import busio
-    import bme680
-    import adafruit_lps35hw as LPS
-    import adafruit_ads1x15.ads1115 as ADS
-    from adafruit_ads1x15.analog_in import AnalogIn
-    import valve
-    i2c = busio.I2C(board.SCL, board.SDA)
-except:
-    import mock_bme as bme680
-    import mock_valve as valve
+i2c = busio.I2C(board.SCL, board.SDA)
 
 class FlowSensor:
     class Data:
