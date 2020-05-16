@@ -2,12 +2,14 @@ from RPi import GPIO
 from time import sleep
 from evdev import UInput, ecodes as e
 import logging
+import time
 
 CLK_PIN = 22
 DT_PIN = 27
 SW_PIN = 17
-A_PIN = 6
-B_PIN = 5
+A_PIN = 10
+B_PIN = 11
+SPK_PIN = 9
 
 GPIO.setmode(GPIO.BCM)
 # rotary
@@ -17,6 +19,8 @@ GPIO.setup(DT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.setup(SW_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.setup(A_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.setup(B_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+#speaker
+GPIO.setup(SPK_PIN, GPIO.OUT)
 #ui
 ui = UInput()
 
@@ -54,7 +58,12 @@ def rotary_callback(c):
             g_counter -= 1
             _keystroke(e.KEY_J)
         
-    
+
+def alarm(seconds):
+    GPIO.output(SPK_PIN, 1)
+    time.sleep(seconds)
+    GPIO.output(SPK_PIN, 0)
+
 def ui_loop():
     GPIO.add_event_detect(SW_PIN, GPIO.FALLING, callback=knob_callback, bouncetime=1200)
     GPIO.add_event_detect(A_PIN, GPIO.FALLING, callback=a_callback, bouncetime=1200)
@@ -64,7 +73,16 @@ def ui_loop():
     
 if __name__ == '__main__':
     ui_loop()
-    input()
+    while True:
+        user = input()
+        if (user == ""):
+            break
+        try:
+            seconds = int(user)
+            alarm(seconds)
+        except Exception as e:
+            print(e)
+
     GPIO.cleanup()
     ui.close()
     
