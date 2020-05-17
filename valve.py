@@ -3,8 +3,6 @@ import time
 import logging
 import board
 import digitalio
-#import pulseio
-import pigpio
 from multiprocessing import Value
 from adafruit_motorkit import MotorKit
 
@@ -18,9 +16,6 @@ LOW = 0
 relay = digitalio.DigitalInOut(board.D26)
 relay.direction = digitalio.Direction.OUTPUT
 
-PWM_PIN = 21
-pi = pigpio.pi()
-
 def breath_relay(breathing, seconds):
     '''
     breathing control for binary solenoid controlled by a relay
@@ -30,17 +25,6 @@ def breath_relay(breathing, seconds):
     relay.value = True
     time.sleep(seconds)
     relay.value = False
-    breathing.value = 0
-
-def breath_pwm(breathing, pulse, seconds):
-    '''
-    breathing control for proportional solenoids
-    '''
-    breathing.value = 1
-    logging.warning("breathing %d for %ds" % (pulse, seconds))
-    pi.set_PWM_dutycycle(PWM_PIN, pulse)
-    time.sleep(seconds)
-    pi.set_PWM_dutycycle(PWM_PIN, 0)
     breathing.value = 0
 
 def breath_i2c(breathing, duty, seconds):
