@@ -100,22 +100,31 @@ html {
     margin-right: 12px;
 }
 
-#hstat {
+#hstats {
+    grid-column: 4;
+    grid-row: 3;
+    position: relative;
+    margin-right: 12px;
+}
+
+#ieRatio {
     grid-column: 3;
     grid-row: 3;
+    position: relative;
+
 }
 
 #vt {
     grid-column: 3;
     grid-row: 4;
     position: relative;
-
 }
 
 #peep2 {
     grid-column: 4;
     grid-row: 4;
     position: relative;
+    margin-right: 12px;
 }
 
 .line {
@@ -154,28 +163,14 @@ html {
     margin: 2px 2px 2px 2px;
 }
 
-.left {
-    float: left;
-    width: 50%;
-    height: 100%;
-    position: relative;
-}
-
-.right {
-    float: right;
-    width: 50%;
-    height: 100%;
-    position: relative;
-}
-
 .top {
     float: top;
-    height: 50%;
+    height: 49%;
 }
 
 .bottom {
     float: bottom;
-    height: 50%;
+    height: 49%;
 }
 
 .sensor-stat-label {
@@ -213,21 +208,11 @@ html {
     color: #f5d76e;
 }
 
-#hstat .left {
-    text-align: center;
-    vertical-align: middle;
-}
-
-#hstat .left h1 {
-    top: 50%;
-    position: absolute;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    margin-right: -50%;
+#ieRatio .stat-value {
     color: #2ecc91;
 }
 
-#hstat .right .value {
+#hstats .value {
     margin-right: 10px;
     font-family: "Red Hat Text", serif;
     color: #2ecc91;
@@ -239,7 +224,7 @@ html {
     text-align: right;
 }
 
-#hstat .right .unit {
+#hstats .unit {
     margin-right: 10px;
     float: right;
     overflow: visible;
@@ -311,6 +296,11 @@ html {
 
 .chart.cell {
     margin-right: 12px;
+}
+
+.spacer {
+    height: 2%;
+    background-color: black;
 }
 
 @media (min-height: 500px) {
