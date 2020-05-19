@@ -198,9 +198,10 @@ Vent.listen = function() {
                 if (Vent._inFocus) {
                     Vent.updateSettings();
                     Vent._inFocus = false;
+                    $('.control').removeClass('focused');
                     break;
                 }
-                else return Vent.menu_select();
+                else return Vent.menu_focus();
             case "KeyL":
                 if (Vent._inFocus) {
                     Vent.incrementValue();
@@ -240,6 +241,7 @@ Vent.menu = function(choices) {
 Vent.menu_focus = function() {
     $('.control').removeClass('focused');
     $('#menu_'+Vent._focus).addClass('focused');
+    Vent._inFocus = true
 };
 
 Vent.menu_highlight = function() {

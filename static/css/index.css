@@ -195,6 +195,14 @@ html {
     border: 2px solid white;
 }
 
+.focused {
+    background: white;
+}
+
+.focused .value {
+    color: #333333 !important;
+}
+
 .cell {
     margin: 2px 2px 2px 2px;
 }
