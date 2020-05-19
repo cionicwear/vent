@@ -312,6 +312,20 @@ Vent.setDate = () => {
     $("#date").html(longDate.join(" "));
 }
 
+Vent.initDataDOM = () => {
+    Vent._peepValue = document.getElementById('peepValue');
+    Vent._peepValue.innerText = `${Vent.settings['PEEP']}`;
+
+    Vent._fio2Value = document.getElementById('fio2Value');
+    Vent._fio2Value.innerText = `${Vent.settings['FiO2']}`;
+
+    Vent._rrValue = document.getElementById('rrValue');
+    Vent._rrValue.innerText = `${Vent.settings['RR']}`;
+
+    Vent._vtValue = document.getElementById('vtValue');
+    Vent._vtValue.innerText = `${Vent.settings['VT']}`;
+}
+
 $(document).ready(function() {
     console.log("Vent online");
     Vent.initChart('pressure');
@@ -329,7 +343,8 @@ $(document).ready(function() {
     });
 
     Vent.listen();
-    Vent.menu(["VC", "PS", "AC"]);
+    // Vent.menu(["VC", "PS", "AC"]);
+    Vent.initDataDOM();
     Vent.refresh();
     
     Vent.setTime();
