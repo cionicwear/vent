@@ -328,7 +328,6 @@ Vent.getFieldByFocus = () => {
 Vent.updateSettings = () => {
     const [field, _] = Vent.getFieldByFocus();
     const data = { [field]: Vent['settings'][field] };
-    console.log(data);
     Vent.asyncReq('POST', '/settings', data);
 }
 

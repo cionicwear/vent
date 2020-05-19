@@ -319,9 +319,9 @@ html {
     overflow: visible;
     font-family: "Red Hat Text", serif;
     color: #ffffff;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0px;
-    line-height: 1.2;
+    line-height: 1;
     font-weight: 500;
     font-style: normal;
     text-align: left;
@@ -333,7 +333,6 @@ html {
     width: 1px;
     height: 12px;
     overflow: hidden;
-    background-color: #ffffff;
     border-radius: 1px 1px 1px 1px;
     opacity: 0.20000000298023224;
 }
