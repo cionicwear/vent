@@ -298,6 +298,20 @@ Vent.updateSettings = () => {
     Vent.asyncReq('POST', '/settings', data);
 }
 
+Vent.setTime = () => {
+    const today = new Date();
+    let ampm = today.toLocaleTimeString().split(" ")[1];
+    let time = today.toLocaleTimeString().split(":");
+    $("#time").html(`${time[0]}:${time[1]} ${ampm}`);
+}
+
+Vent.setDate = () => {
+    const today = new Date();
+    let longDate = today.toDateString().split(" ");
+    longDate.shift();
+    $("#date").html(longDate.join(" "));
+}
+
 $(document).ready(function() {
     console.log("Vent online");
     Vent.initChart('pressure');
@@ -317,4 +331,8 @@ $(document).ready(function() {
     Vent.listen();
     Vent.menu(["VC", "PS", "AC"]);
     Vent.refresh();
+    
+    Vent.setTime();
+    setInterval(Vent.setTime, 60000);
+    Vent.setDate();
 });

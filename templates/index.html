@@ -16,7 +16,12 @@
       
       <div id="demographics">
 	      <span class="icon" id="gender">+</span>
-	      <span>BW 60 kg</span>
+        <span id="patientInfo">BW 60 kg</span>
+      </div>
+      <div id="dateAndTime">
+        <span class="dtText" id="time"></span>
+        <span id="bar"></span>
+        <span class="dtText" id="date"></span>
       </div>
       
       <div id="status">
@@ -27,42 +32,43 @@
       <div class="chart cell" id="temperature"> </div>
       <div class="chart cell" id="humidity"> </div>
 
-      <div class="stat cell" id="pstat">
-        <div class="left"> 
-          <h3 class="sensor-stat-label">Ppeak</h3>
-          <div>
-            <h1 class="stat-value">21</h1>
-            <h1 class="stat-value-unit">cmH<sub>2</sub>O</h1>
-          </div>
-        </div>
-        <div class="right">
-          <h3 class="sensor-stat-label">PEEP</h3>
-          <div>
-            <h1 class="stat-value">9.5</h1>
-            <h1 class="stat-value-unit">cmH<sub>2</sub>O</h1>
-          </div>
+      <div class="stat cell" id="ppeak"> 
+        <h3 class="sensor-stat-label">Ppeak</h3>
+        <div>
+          <h1 class="stat-value">21</h1>
+          <h1 class="stat-value-unit">cmH<sub>2</sub>O</h1>
         </div>
       </div>
-      <div class="stat cell" id="tstat">
-        <div class="left"> 
-          <h3 class="sensor-stat-label">VT</h3>
-          <div>
-            <h1 class="stat-value">334</h1>
-            <h1 class="stat-value-unit">ml</h1>
-          </div>
-        </div>
-        <div class="right">
-          <h3 class="sensor-stat-label">PEEP</h3>
-          <div>
-            <h1 class="stat-value">5.5</h1>
-            <h1 class="stat-value-unit">ml/kg</h1>
-          </div>
+
+      <div class="stat cell" id="peep">
+        <h3 class="sensor-stat-label">PEEP</h3>
+        <div>
+          <h1 class="stat-value">9.5</h1>
+          <h1 class="stat-value-unit">cmH<sub>2</sub>O</h1>
         </div>
       </div>
+
+      <div class="stat cell" id="vt"> 
+        <h3 class="sensor-stat-label">VT</h3>
+        <div>
+          <h1 class="stat-value">334</h1>
+          <h1 class="stat-value-unit">ml</h1>
+        </div>
+      </div>
+
+      <div class="stat cell" id="peep2">
+        <h3 class="sensor-stat-label">PEEP</h3>
+        <div>
+          <h1 class="stat-value">5.5</h1>
+          <h1 class="stat-value-unit">ml/kg</h1>
+        </div>
+      </div>
+
+
       <div class="stat cell" id="hstat">
         <div class="left"> 
           <h3 class="sensor-stat-label">I:E Ratio</h3>
-          <h1 class="">1:2</h1>
+          <h1 class="stat-value">1:2</h1>
         </div>
         <div class="right">
           <div class="top">
