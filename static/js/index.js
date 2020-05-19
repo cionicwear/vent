@@ -242,15 +242,20 @@ Vent.menu_focus = function() {
     $('#menu_'+Vent._focus).addClass('focused');
 };
 
+Vent.menu_highlight = function() {
+    $('.control').removeClass('highlighted');
+    $('#menu_'+Vent._focus).addClass('highlighted');
+};
+
 Vent.menu_scroll = function(dir) {
     Vent._focus += dir;
     if (Vent._focus < 0) {
-	Vent._focus = Vent._choices.length - 1;
+        Vent._focus = Vent._choices.length - 1;
     }
     if (Vent._focus >= Vent._choices.length) {
-	Vent._focus = 0;
+        Vent._focus = 0;
     }
-    Vent.menu_focus();
+    Vent.menu_highlight();
 };
 
 Vent.menu_select = function() {
@@ -313,6 +318,9 @@ Vent.setDate = () => {
 }
 
 Vent.initDataDOM = () => {
+    // TODO change this so its scroll menu
+    Vent._mode =  document.getElementById('modeValue');
+
     Vent._peepValue = document.getElementById('peepValue');
     Vent._peepValue.innerText = `${Vent.settings['PEEP']}`;
 
@@ -324,6 +332,11 @@ Vent.initDataDOM = () => {
 
     Vent._vtValue = document.getElementById('vtValue');
     Vent._vtValue.innerText = `${Vent.settings['VT']}`;
+    
+    Vent._choices = [Vent._modeValue, Vent._peepValue, Vent._fio2Value, Vent._rrValue, Vent._vtValue]
+
+    Vent._focus = 0;
+    Vent.menu_highlight();
 }
 
 $(document).ready(function() {

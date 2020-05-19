@@ -174,12 +174,12 @@ html {
 }
 
 .control .value {
-font-family: Red Hat Text;
-font-style: normal;
-font-weight: bold;
-font-size: 24px;
-line-height: 32px;
-color: #FFFFFF;
+    font-family: Red Hat Text;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 24px;
+    line-height: 32px;
+    color: #FFFFFF;
 }
 
 #modeValue {
@@ -191,8 +191,8 @@ color: #FFFFFF;
     margin-top: 10;    
 }
 
-.focused {
-    background-color: #444;
+.highlighted {
+    border: 2px solid white;
 }
 
 .cell {
