@@ -5,6 +5,7 @@ var MAX_SAMPLES = 500;
 Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0}
 Vent._inFocus = false
 Vent.sensorReadings = {'Ppeak': 0, 'PEEP': 0, 'VT': 0, 'RR': 0, 'FiO2': 0, 'IE': 0}
+Vent.MODES = ['Mode 1', 'Volume Control', 'Pressure Support'];
 
 Vent._charts = {};
 Vent._x = {};
@@ -278,28 +279,54 @@ Vent.menu_select = function() {
 };
 
 Vent.decrementValue = () => {
-    const field = Vent._choices[Vent._focus];
-    if (Vent['settings'][field] == 0) return;
-    // TODO: custom increments based on field type
-    switch(field){
-        default:
-            Vent['settings'][field] -= 1;
-    }
-    $(`.control #${field}`).text(Vent['settings'][field]);
+    const [field, id] = Vent.getFieldByFocus();
+    
+    Vent['settings'][field] -= 1;
+    $(`#${id}`).text(`${Vent['settings'][field]}`);
 }
 
 Vent.incrementValue = () => {
-    const field = Vent._choices[Vent._focus];
+    const [field, id] = Vent.getFieldByFocus();
+
+    Vent['settings'][field] += 1;
+    $(`#${id}`).text(`${Vent['settings'][field]}`);
+}
+
+Vent.getFieldByFocus = () => {
+    let field, id;
+
     // TODO: custom increments based on field type
-    switch(field){
-        default:
-            Vent['settings'][field] += 1;
+    switch(Vent._focus){
+        case 0: 
+            // switch mode
+            break;
+        case 1:
+            // peep
+            field = 'PEEP';
+            id = 'peepValue';
+            break;
+        case 2: 
+            // fio2
+            field = 'FiO2';
+            id = 'fio2Value';
+            break;
+        case 3:
+            // rr
+            field = 'RR';
+            id = 'rrValue';
+            break;
+        case 4: 
+            // vt
+            field = 'VT';
+            id = 'vtValue';
+            break;
     }
-    $(`.control #${field}`).text(Vent['settings'][field]);
+
+    return [field, id];
 }
 
 Vent.updateSettings = () => {
-    const field = Vent._choices[Vent._focus];
+    const [field, _] = Vent.getFieldByFocus();
     const data = { [field]: Vent['settings'][field] };
     console.log(data);
     Vent.asyncReq('POST', '/settings', data);
