@@ -345,9 +345,8 @@ Vent.updateSettings = () => {
 
 Vent.setTime = () => {
     const today = new Date();
-    let ampm = today.toLocaleTimeString().split(" ")[1];
-    let time = today.toLocaleTimeString().split(":");
-    $("#time").html(`${time[0]}:${time[1]} ${ampm}`);
+    let time = today.toTimeString().split(":");
+    $("#time").html(`${time[0]}:${time[1]}`);
 }
 
 Vent.setDate = () => {
