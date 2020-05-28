@@ -94,8 +94,16 @@ html {
     margin-right: 8px;
 }
 
-.alarmStat {
+.highEmergencyStat {
     background: #FF0000 !important;
+}
+
+.mediumEmergencyStat {
+    background:#DA8638 !important;
+}
+
+.lowEmergencyStat {
+    background:#DAB842 !important;
 }
 
 #pressure {

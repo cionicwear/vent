@@ -186,10 +186,16 @@ Vent.listen = function() {
     document.addEventListener('keydown', function(event) {
         switch(event.code) {
             case "KeyQ": 
-                Vent.triggerAlarm("peep");
+                Vent.triggerAlarm("high", "peep");
                 break;
             case "KeyW": 
-                Vent.silenceAlarm("peep");
+                Vent.triggerAlarm("medium", "ppeak");
+                break;
+            case "KeyE": 
+                Vent.triggerAlarm("low", "vt");
+                break;
+            case "KeyR": 
+                Vent.silenceAlarm();
                 break;
             case "KeyA":
                 return Vent.silence();
@@ -373,22 +379,40 @@ Vent.initDataDOM = () => {
     Vent.menu_highlight();
 }
 
-Vent.triggerAlarm = (stat) => {
-    $(`#${stat}`).addClass('alarmStat');
-    $(`#controls .alarmSettings`).addClass('alarmStat');
+Vent.getAlarmCSSClassByType = () => {
+    if (Vent._alarmType == 'high') return 'highEmergencyStat';
+    else if (Vent._alarmType == 'medium') return'mediumEmergencyStat';
+    else return 'lowEmergencyStat';
+}
+
+Vent.triggerAlarm = (type, stat) => {
+    Vent.silenceAlarm();
+    Vent._alarmType = type;
+    Vent._alarmStat = stat;
+
+    const alarmClass = Vent.getAlarmCSSClassByType;
+    $(`#${stat}`).addClass(alarmClass);
+    $(`#controls .alarmSettings`).addClass(alarmClass);
     $(`#${stat} .stat-value`).addClass('whiteText');
     $(`#${stat} .stat-value-unit`).addClass('whiteText');
     $(`#dateAndTime`).addClass('alarm');
-    $('#alarm').css('display', 'inline-flex'); 
+    $('#alarm').css('display', 'inline-flex');
+    $('#alarm').addClass(alarmClass);
 }
 
-Vent.silenceAlarm = (stat) => {
-    $(`#${stat}`).removeClass('alarmStat');
-    $(`#controls .alarmSettings`).removeClass('alarmStat');
-    $(`#${stat} .stat-value`).removeClass('whiteText');
-    $(`#${stat} .stat-value-unit`).removeClass('whiteText');
+Vent.silenceAlarm = () => {
+    const alarmClass = Vent.getAlarmCSSClassByType;
+
+    $(`#${Vent._alarmStat}`).removeClass(alarmClass);
+    $(`#controls .alarmSettings`).removeClass(alarmClass);
+    $(`#${Vent._alarmStat} .stat-value`).removeClass('whiteText');
+    $(`#${Vent._alarmStat} .stat-value-unit`).removeClass('whiteText');
     $(`#dateAndTime`).removeClass('alarm');
     $('#alarm').css('display', 'none');
+    $(`#alarm`).removeClass('alarm');
+
+    Vent._alarmType = null;
+    Vent._alarmStat = null;
 }
 
 $(document).ready(function() {
