@@ -51,6 +51,8 @@ class GlobalState():
     tank_pressure = Array('d', range(10000))
     breath_pressure = Array('d', range(10000))
     flow = Array('d', range(10000))
+    v1_pressure = Array('d', range(count.value))
+    v2_pressure = Array('d', range(count.value))
     breathing = Value('i', 0)
     rr = Value('i', 0)
     vt = Value('i', 0)
@@ -112,9 +114,13 @@ if __name__ == '__main__':
         g.times,
         g.tank_pressure,
         g.breath_pressure,
+        g.v1_pressure,
+        g.v2_pressure,
         g.flow,
         g.idx,
-        g.count))
+        g.count,
+        60
+    ))
     p.start()
 
     # start app

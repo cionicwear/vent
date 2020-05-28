@@ -6,8 +6,10 @@ import logging
 import board
 import busio
 import bme680
+
 import adafruit_lps35hw as LPS
 import adafruit_ads1x15.ads1115 as ADS
+import adafruit_mprls as MPRLS
 from adafruit_ads1x15.analog_in import AnalogIn
 import valve
 
@@ -67,12 +69,30 @@ class PressureSensorLPS:
 
     def __init__(self, address=0x5D):
         self.lps = LPS.LPS35HW(i2c, address=address)
+        self.lps.data_rate = LPS.DataRate.RATE_75_HZ
         self.data = self.Data()
 
     def read(self):
         self.data.pressure = self.lps.pressure
         self.data.temperature = self.lps.temperature
-        
+
+    def zero_pressure(self):
+        self.lps.zero_pressure()
+
+class PressureSensorMPRLS:
+    class Data:
+        def __init__(self):
+            self.pressure = 0
+            self.temperature = 0
+            self.humidity = 0
+
+    def __init__(self, address=0x5D):
+        self.mprls = MPRLS.MPRLS(i2c)
+        self.data = self.Data()
+
+    def read(self):
+        self.data.pressure = self.mprls.pressure
+
 def check_pressure(pressure, breathing):
     # on negative pressure start breathing process
     if pressure < 1000:
@@ -81,27 +101,61 @@ def check_pressure(pressure, breathing):
             p = Process(target=valve.breath_relay, args=(breathing,2))
             p.start()
 
-
-def sensor_loop(times, tank_pressure, breath_pressure, flow, idx, count):
-    flow_sensor = FlowSensor()
+def sensor_loop(times, tank_pressure, breath_pressure, v1_pressure, v2_pressure, flow, idx, count, debug):
     pressure_1 = PressureSensorLPS(address=0x5d)
     pressure_2 = PressureSensorLPS(address=0x5c)
+    pressure_3 = PressureSensorMPRLS()
     breathing = Value('i', 0)
-    while True:
-        flow_sensor.read()
+    dc = 1
+
+    # start calibration routine
+    for i in range(0,100):
+        time.sleep(0.0001)
         pressure_1.read()
         pressure_2.read()
+        pressure_3.read()
+
+    # zero out sensors
+    pressure_1.zero_pressure()
+    pressure_2.zero_pressure()
+
+    # clear readings
+    for i in range(0,100):
+        time.sleep(0.0001)
+        pressure_1.read()
+        pressure_2.read()
+        pressure_3.read()
+
+    while True:
+        pressure_1.read()
+        pressure_2.read()
+        pressure_3.read()
 
         idx.value += 1
         if idx.value >= count.value:
             idx.value = 0
-        times[idx.value] = time.time()
-        tank_pressure[idx.value] = pressure_1.data.pressure
-        breath_pressure[idx.value] = pressure_2.data.pressure
-        flow[idx.value] = flow_sensor.data.rate
+
+        t = time.time()
+        p1 = pressure_1.data.pressure
+        p2 = pressure_2.data.pressure
+        dp = abs(p2-p1)
+        f = 7.33656*(dp**0.5)
+        bp = pressure_3.data.pressure
+
+        times[idx.value] = t
+        tank_pressure[idx.value] = 1.0
+        breath_pressure[idx.value] = bp
+        v1_pressure[idx.value] = p1
+        v2_pressure[idx.value] = p2
+        #flow[idx.value] = flow_sensor.data.rate
+        flow[idx.value] = f
         
-        check_pressure(breath_pressure[idx.value], breathing)
-        #print("%f %f %f" % (pressure_1.data.pressure, pressure_2.data.pressure, flow_sensor.data.rate))
+        #check_pressure(breath_pressure[idx.value], breathing)
+        if debug is not None:
+            dc -= 1;
+            if dc == 0:
+                dc = debug
+                print("%f %f %f %f %f" % (t, p1, p2, f, bp))
              
         time.sleep(0.0001)
     
@@ -111,26 +165,26 @@ if __name__ == '__main__':
     times = Array('d', range(count.value))
     tank_pressure = Array('d', range(count.value))
     breath_pressure = Array('d', range(count.value))
-    temperature = Array('d', range(count.value))
+    v1_pressure = Array('d', range(count.value))
+    v2_pressure = Array('d', range(count.value))
     flow = Array('d', range(count.value))
     
-    p = Process(target=sensor_loop, args=(times, tank_pressure, breath_pressure, flow, idx, count))
+    p = Process(target=sensor_loop, args=(times, tank_pressure, breath_pressure, v1_pressure, v2_pressure, flow, idx, count, 1))
     p.start()
 
     last = 0
-    print("tank breath flow")
     while True:
         curr = idx.value
         if last > curr:
-            tank_pressures = tank_pressure[last:] + tank_pressure[:curr]
-            breath_pressures = breath_pressure[last:] + breath_pressure[:curr]
-            flows = flow[last:]+flow[:curr]
+            m_times = times[last:] + times[:curr]
+            m_tank_pressure = tank_pressure[last:] + tank_pressure[:curr]
+            m_breath_pressure = breath_pressure[last:] + breath_pressure[:curr]
+            m_flow = flow[last:]+flow[:curr]
         else:
-            tank_pressures = tank_pressure[last:curr]
-            breath_pressures = breath_pressure[last:curr]
-            flows = flow[last:curr]
-        #if len(flows) > 0 and len(tank_pressures) > 0 and len(breath_pressures):
-        #    print("%f %f %f" % (tank_pressures[0], breath_pressures[0], flows[0]))
+            m_times = times[last:curr]
+            m_tank_pressure = tank_pressure[last:curr]
+            m_breath_pressure = breath_pressure[last:curr]
+            m_flow = flow[last:curr]
         last = curr
         time.sleep(1)
         

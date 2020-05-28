@@ -43,8 +43,8 @@ if __name__ == '__main__':
         user = input()
         if (user == ""):
             for i in range(80,100):
-                breath_i2c(breathing, i, 2)
-                time.sleep(1)
+                breath_i2c(breathing, 100, 1)
+                time.sleep(2)
             break
         try:
             duty = int(user)
