@@ -367,23 +367,27 @@ Vent.initDataDOM = () => {
     Vent._vtValue = document.getElementById('vtValue');
     Vent._vtValue.innerText = `${Vent.settings['VT']}`;
     
-    Vent._choices = [Vent._modeValue, Vent._peepValue, Vent._fio2Value, Vent._rrValue, Vent._vtValue]
+    Vent._choices = ['ALARM_SETTINGS', Vent._modeValue, Vent._peepValue, Vent._fio2Value, Vent._rrValue, Vent._vtValue]
 
-    Vent._focus = 0;
+    Vent._focus = 1;
     Vent.menu_highlight();
 }
 
 Vent.triggerAlarm = (stat) => {
     $(`#${stat}`).addClass('alarmStat');
+    $(`#controls .alarmSettings`).addClass('alarmStat');
     $(`#${stat} .stat-value`).addClass('whiteText');
     $(`#${stat} .stat-value-unit`).addClass('whiteText');
+    $(`#dateAndTime`).addClass('alarm');
     $('#alarm').css('display', 'inline-flex'); 
 }
 
 Vent.silenceAlarm = (stat) => {
     $(`#${stat}`).removeClass('alarmStat');
+    $(`#controls .alarmSettings`).removeClass('alarmStat');
     $(`#${stat} .stat-value`).removeClass('whiteText');
     $(`#${stat} .stat-value-unit`).removeClass('whiteText');
+    $(`#dateAndTime`).removeClass('alarm');
     $('#alarm').css('display', 'none');
 }
 

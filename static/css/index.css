@@ -14,7 +14,7 @@ html {
 
 .body {
     display:grid;
-    grid-template-columns: 16% 16% 16% 16% 17% 17%;
+    grid-template-columns: 16.6% 16.6% 16.6% 16.6% 16.6% 16.6%;
     grid-template-rows: 8% 25% 25% 25% 17%;
     width: 100vw;
     height: 100vh;
@@ -34,9 +34,9 @@ html {
 
 #controls {
     display: grid;
-    grid-gap: 5px;
+    grid-gap: 4px;
     /* Space between items */
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
     overflow: hidden;
     border-radius: 10px 10px 10px 10px;
     margin-right: 12px;
@@ -57,9 +57,16 @@ html {
 }
 
 #dateAndTime {
-    grid-column: 5;
+    grid-column: 3/5;
     grid-row: 1;
     text-align: center;
+}
+
+#dateAndTime.alarm {
+    grid-column: 5;
+    grid-row: 1;
+    margin-left: 18px;
+    text-align: left;
 }
 
 #alarm {
@@ -70,6 +77,7 @@ html {
     /* display: inline-flex; */
     display: none;
     align-items: center;
+    margin-right: 12px;
 }
 
 #alarm h2 {
@@ -87,7 +95,7 @@ html {
 }
 
 .alarmStat {
-    background: #FF0000;
+    background: #FF0000 !important;
 }
 
 #pressure {
@@ -107,17 +115,25 @@ html {
 
 #status {
     grid-column: 5;
-    row: 1;
+    grid-row: 1;
 }
 
 #controls {
-    grid-column: 3/7;
+    grid-column: 2/7;
     grid-row: 5;
 }
 
-#alarmControls {
-    grid-column: 2;
-    grid-row: 5;
+.alarmSettings {
+    font-family: Red Hat Text;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 12px;
+    line-height: 14px;
+    text-align: center;
+    color: #FAFAFA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #ppeak {
@@ -380,7 +396,7 @@ html {
 	z-index: 100;
 	bottom: 0;
 	height: 50px;
-	width: 30%;
+	width: 20%;
 	background-color: #aaaaaa;
     }
     html {
