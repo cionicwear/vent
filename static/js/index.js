@@ -186,13 +186,13 @@ Vent.listen = function() {
     document.addEventListener('keydown', function(event) {
         switch(event.code) {
             case "KeyQ": 
-                Vent.triggerAlarm("high", "peep");
+                Vent.triggerAlarm("high", "peep", "high emergency");
                 break;
             case "KeyW": 
-                Vent.triggerAlarm("medium", "ppeak");
+                Vent.triggerAlarm("medium", "ppeak", 'med emergency');
                 break;
             case "KeyE": 
-                Vent.triggerAlarm("low", "vt");
+                Vent.triggerAlarm("low", "vt", 'low emergency');
                 break;
             case "KeyR": 
                 Vent.silenceAlarm();
@@ -385,7 +385,7 @@ Vent.getAlarmCSSClassByType = () => {
     else return 'lowEmergencyStat';
 }
 
-Vent.triggerAlarm = (type, stat) => {
+Vent.triggerAlarm = (type, stat, text) => {
     Vent.silenceAlarm();
     Vent._alarmType = type;
     Vent._alarmStat = stat;
@@ -398,6 +398,7 @@ Vent.triggerAlarm = (type, stat) => {
     $(`#dateAndTime`).addClass('alarm');
     $('#alarm').css('display', 'inline-flex');
     $('#alarm').addClass(alarmClass);
+    $('#alarm h2').html(text);
 }
 
 Vent.silenceAlarm = () => {
