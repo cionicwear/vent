@@ -88,7 +88,6 @@ html {
 
 .alarmStat {
     background: #FF0000;
-    color: #FFFFFF;
 }
 
 #pressure {
@@ -368,6 +367,10 @@ html {
 
 .chart.cell {
     margin-right: 12px;
+}
+
+.whiteText {
+    color: #ffffff !important;
 }
 
 @media (min-height: 500px) {

@@ -375,12 +375,16 @@ Vent.initDataDOM = () => {
 
 Vent.triggerAlarm = (stat) => {
     $(`#${stat}`).addClass('alarmStat');
+    $(`#${stat} .stat-value`).addClass('whiteText');
+    $(`#${stat} .stat-value-unit`).addClass('whiteText');
     $('#alarm').css('display', 'inline-flex'); 
 }
 
 Vent.silenceAlarm = (stat) => {
     $(`#${stat}`).removeClass('alarmStat');
-    $('#alarm').css('display', 'none'); 
+    $(`#${stat} .stat-value`).removeClass('whiteText');
+    $(`#${stat} .stat-value-unit`).removeClass('whiteText');
+    $('#alarm').css('display', 'none');
 }
 
 $(document).ready(function() {
