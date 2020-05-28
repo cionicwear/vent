@@ -6,6 +6,11 @@ Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0}
 Vent._inFocus = false
 Vent.sensorReadings = {'Ppeak': 0, 'PEEP': 0, 'VT': 0, 'RR': 0, 'FiO2': 0, 'IE': 0}
 Vent.MODES = ['VCV', 'PCV', 'PSV'];
+Vent.MODE_TO_INPUTS = {
+    'PCV': ['PINSP', 'RR', 'IE', 'PEEP'],
+    'VCV': ['PEEP', 'FiO2', 'RR', 'VT'],
+    'PSV': ['FiO2', 'PINSP', 'RR', 'PEEP']
+}
 
 Vent._charts = {};
 Vent._x = {};
@@ -308,26 +313,30 @@ Vent.getFieldByFocus = () => {
     let field, id;
 
     // TODO: custom increments based on field type
+    // TODO: change cases based on active mode
     switch(Vent._focus){
         case 0: 
+            // alarm settings
+            break;
+        case 1: 
             // switch mode
             break;
-        case 1:
+        case 2:
             // peep
             field = 'PEEP';
             id = 'peepValue';
             break;
-        case 2: 
+        case 3: 
             // fio2
             field = 'FiO2';
             id = 'fio2Value';
             break;
-        case 3:
+        case 4:
             // rr
             field = 'RR';
             id = 'rrValue';
             break;
-        case 4: 
+        case 5: 
             // vt
             field = 'VT';
             id = 'vtValue';

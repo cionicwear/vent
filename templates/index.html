@@ -76,19 +76,6 @@
         <h1 class="stat-value">1:2</h1>
       </div>
 
-      <!-- <div class="stat cell" id="hstats">
-        <div class="top">
-          <h3 class="sensor-stat-label">FiO<sub>2</sub></h3>
-          <h3 class="value">50</h3>
-          <h3 class="unit">%</h3>
-        </div>
-        <div class="spacer"></div>
-        <div class="bottom">
-          <h3 class="sensor-stat-label">RR</h3>
-          <h3 class="value">15<br>bpm</h3>
-        </div>
-      </div> -->
-
       <div class="stat cell" id="fio2">
           <h3 class="sensor-stat-label">FiO<sub>2</sub></h3>
           <h3 class="value">50</h3>
@@ -118,7 +105,12 @@
         <div class="control alarmSettings" id="menu_0">
           <h3 class="value" id="alarmSetupText">Setup <br>Alarms</h3>
         </div>
-        <div class="control" id="menu_1">
+        <div class="control modeContainer" id="menu_1">
+          <div class="elipseContainer">
+            <img src="./../static/img/active_elipse.svg" id="elipse1">
+            <img src="./../static/img/elipse.svg" id="elipse2">
+            <img src="./../static/img/elipse.svg" id="elipse3">
+          </div>
           <h3 class="title">MODE</h3>
           <h3 class="value">PCV</h3>
         </div>
