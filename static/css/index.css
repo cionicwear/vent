@@ -15,7 +15,7 @@ html {
 .body {
     display:grid;
     grid-template-columns: 16.6% 16.6% 16.6% 16.6% 16.6% 16.6%;
-    grid-template-rows: 8% 25% 25% 25% 17%;
+    grid-template-rows: 8% 25% 12.5% 12.5% 25% 17%;
     width: 100vw;
     height: 100vh;
 }   
@@ -34,7 +34,7 @@ html {
 
 #controls {
     grid-column: 1/7;
-    grid-row: 5;
+    grid-row: 6;
     display: grid;
     grid-gap: 4px;
     /* Space between items */
@@ -44,16 +44,6 @@ html {
     margin-right: 10px;
     margin-left: 10px;
     margin-bottom: 20px;
-}
-
-#hwControls {
-    grid-column: 1/2;
-    grid-row: 5;
-    display: grid;
-    grid-gap: 4px;
-    /* Space between items */
-    grid-template-columns: 1fr 1fr;
-    overflow: hidden;
 }
 
 #demographics {
@@ -67,12 +57,17 @@ html {
 #demographics {
     grid-column: 1;
     grid-row: 1;
+    display: flex;
+    align-items: center;
 }
 
 #dateAndTime {
     grid-column: 3/5;
     grid-row: 1;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #dateAndTime.alarm {
@@ -126,12 +121,12 @@ html {
 
 #temperature {
     grid-column: 1/5;
-    grid-row: 3;
+    grid-row: 3/5;
 }
 
 #humidity {
     grid-column: 1/5;
-    grid-row: 4;
+    grid-row: 5;
 }
 
 #status {
@@ -163,34 +158,49 @@ html {
 
 #peep {
     grid-column: 6;
-    grid-row: 2;
+    grid-row: 2/3;
     position: relative;
     margin-right: 12px;
 }
 
 #hstats {
     grid-column: 6;
+    /* grid-row: 3/5; */
     grid-row: 3;
+    position: relative;
+    margin-right: 12px;
+}
+
+#fio2 {
+    grid-column: 6;
+    grid-row: 3;
+    position: relative;
+    margin-right: 12px;
+}
+
+#rr {
+    grid-column: 6;
+    grid-row: 4;
     position: relative;
     margin-right: 12px;
 }
 
 #ieRatio {
     grid-column: 5;
-    grid-row: 3;
+    grid-row: 3/5;
     position: relative;
 
 }
 
 #vt {
     grid-column: 5;
-    grid-row: 4;
+    grid-row: 5;
     position: relative;
 }
 
 #vtbw {
     grid-column: 6;
-    grid-row: 4;
+    grid-row: 5;
     position: relative;
     margin-right: 12px;
 }
@@ -263,8 +273,12 @@ html {
 }
 
 .top {
-    float: top;
-    height: 49%;
+    /* float: top;
+    height: 49%; */
+    grid-column: 6;
+    grid-row: 3;
+    position: relative;
+    margin-right: 12px;
 }
 
 .bottom {
@@ -311,7 +325,7 @@ html {
     color: #2ecc91;
 }
 
-#hstats .value {
+#fio2 .value, #rr .value {
     margin-right: 10px;
     font-family: "Red Hat Text", serif;
     color: #2ecc91;
@@ -323,13 +337,13 @@ html {
     text-align: right;
 }
 
-#hstats .unit {
+#fio2 .unit, #rr .unit {
     margin-right: 10px;
     float: right;
     overflow: visible;
     font-family: "Red Hat Text", serif;
     color: #8effce;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0px;
     line-height: 1.2;
     font-weight: 700;
@@ -367,7 +381,7 @@ html {
     font-style: normal;
     text-align: left;
     position: relative;
-    top: 0;
+    margin-left: 8px;
 }
 
 .dtText {
@@ -380,14 +394,12 @@ html {
     font-weight: 500;
     font-style: normal;
     text-align: left;
-    position: relative;
-    top: 0;
+    margin-left: 8px;
 }
 
 #bar {
     width: 1px;
     height: 12px;
-    overflow: hidden;
     border-radius: 1px 1px 1px 1px;
     opacity: 0.20000000298023224;
 }
