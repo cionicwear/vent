@@ -5,6 +5,7 @@ var MAX_SAMPLES = 500;
 Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0}
 Vent._inFocus = false
 Vent.sensorReadings = {'Ppeak': 0, 'PEEP': 0, 'VT': 0, 'RR': 0, 'FiO2': 0, 'IE': 0}
+Vent.MODES = ['Mode 1', 'Volume Control', 'Pressure Support'];
 
 Vent._charts = {};
 Vent._x = {};
@@ -198,9 +199,10 @@ Vent.listen = function() {
                 if (Vent._inFocus) {
                     Vent.updateSettings();
                     Vent._inFocus = false;
+                    $('.control').removeClass('focused');
                     break;
                 }
-                else return Vent.menu_select();
+                else return Vent.menu_focus();
             case "KeyL":
                 if (Vent._inFocus) {
                     Vent.incrementValue();
@@ -240,17 +242,23 @@ Vent.menu = function(choices) {
 Vent.menu_focus = function() {
     $('.control').removeClass('focused');
     $('#menu_'+Vent._focus).addClass('focused');
+    Vent._inFocus = true
+};
+
+Vent.menu_highlight = function() {
+    $('.control').removeClass('highlighted');
+    $('#menu_'+Vent._focus).addClass('highlighted');
 };
 
 Vent.menu_scroll = function(dir) {
     Vent._focus += dir;
     if (Vent._focus < 0) {
-	Vent._focus = Vent._choices.length - 1;
+        Vent._focus = Vent._choices.length - 1;
     }
     if (Vent._focus >= Vent._choices.length) {
-	Vent._focus = 0;
+        Vent._focus = 0;
     }
-    Vent.menu_focus();
+    Vent.menu_highlight();
 };
 
 Vent.menu_select = function() {
@@ -271,31 +279,92 @@ Vent.menu_select = function() {
 };
 
 Vent.decrementValue = () => {
-    const field = Vent._choices[Vent._focus];
-    if (Vent['settings'][field] == 0) return;
-    // TODO: custom increments based on field type
-    switch(field){
-        default:
-            Vent['settings'][field] -= 1;
-    }
-    $(`.control #${field}`).text(Vent['settings'][field]);
+    const [field, id] = Vent.getFieldByFocus();
+    
+    Vent['settings'][field] -= 1;
+    $(`#${id}`).text(`${Vent['settings'][field]}`);
 }
 
 Vent.incrementValue = () => {
-    const field = Vent._choices[Vent._focus];
+    const [field, id] = Vent.getFieldByFocus();
+
+    Vent['settings'][field] += 1;
+    $(`#${id}`).text(`${Vent['settings'][field]}`);
+}
+
+Vent.getFieldByFocus = () => {
+    let field, id;
+
     // TODO: custom increments based on field type
-    switch(field){
-        default:
-            Vent['settings'][field] += 1;
+    switch(Vent._focus){
+        case 0: 
+            // switch mode
+            break;
+        case 1:
+            // peep
+            field = 'PEEP';
+            id = 'peepValue';
+            break;
+        case 2: 
+            // fio2
+            field = 'FiO2';
+            id = 'fio2Value';
+            break;
+        case 3:
+            // rr
+            field = 'RR';
+            id = 'rrValue';
+            break;
+        case 4: 
+            // vt
+            field = 'VT';
+            id = 'vtValue';
+            break;
     }
-    $(`.control #${field}`).text(Vent['settings'][field]);
+
+    return [field, id];
 }
 
 Vent.updateSettings = () => {
-    const field = Vent._choices[Vent._focus];
+    const [field, _] = Vent.getFieldByFocus();
     const data = { [field]: Vent['settings'][field] };
-    console.log(data);
     Vent.asyncReq('POST', '/settings', data);
+}
+
+Vent.setTime = () => {
+    const today = new Date();
+    let ampm = today.toLocaleTimeString().split(" ")[1];
+    let time = today.toLocaleTimeString().split(":");
+    $("#time").html(`${time[0]}:${time[1]} ${ampm}`);
+}
+
+Vent.setDate = () => {
+    const today = new Date();
+    let longDate = today.toDateString().split(" ");
+    longDate.shift();
+    $("#date").html(longDate.join(" "));
+}
+
+Vent.initDataDOM = () => {
+    // TODO change this so its scroll menu
+    Vent._mode =  document.getElementById('modeValue');
+
+    Vent._peepValue = document.getElementById('peepValue');
+    Vent._peepValue.innerText = `${Vent.settings['PEEP']}`;
+
+    Vent._fio2Value = document.getElementById('fio2Value');
+    Vent._fio2Value.innerText = `${Vent.settings['FiO2']}`;
+
+    Vent._rrValue = document.getElementById('rrValue');
+    Vent._rrValue.innerText = `${Vent.settings['RR']}`;
+
+    Vent._vtValue = document.getElementById('vtValue');
+    Vent._vtValue.innerText = `${Vent.settings['VT']}`;
+    
+    Vent._choices = [Vent._modeValue, Vent._peepValue, Vent._fio2Value, Vent._rrValue, Vent._vtValue]
+
+    Vent._focus = 0;
+    Vent.menu_highlight();
 }
 
 $(document).ready(function() {
@@ -315,6 +384,11 @@ $(document).ready(function() {
     });
 
     Vent.listen();
-    Vent.menu(["VC", "PS", "AC"]);
+    // Vent.menu(["VC", "PS", "AC"]);
+    Vent.initDataDOM();
     Vent.refresh();
+    
+    Vent.setTime();
+    setInterval(Vent.setTime, 60000);
+    Vent.setDate();
 });
