@@ -5,7 +5,7 @@ var MAX_SAMPLES = 500;
 Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0}
 Vent._inFocus = false
 Vent.sensorReadings = {'Ppeak': 0, 'PEEP': 0, 'VT': 0, 'RR': 0, 'FiO2': 0, 'IE': 0}
-Vent.MODES = ['Mode 1', 'Volume Control', 'Pressure Support'];
+Vent.MODES = ['VCV', 'PCV', 'PSV'];
 
 Vent._charts = {};
 Vent._x = {};
@@ -185,6 +185,12 @@ Vent.silence = function() {
 Vent.listen = function() {
     document.addEventListener('keydown', function(event) {
         switch(event.code) {
+            case "KeyQ": 
+                Vent.triggerAlarm("peep");
+                break;
+            case "KeyW": 
+                Vent.silenceAlarm("peep");
+                break;
             case "KeyA":
                 return Vent.silence();
             case "KeyS":
@@ -365,6 +371,16 @@ Vent.initDataDOM = () => {
 
     Vent._focus = 0;
     Vent.menu_highlight();
+}
+
+Vent.triggerAlarm = (stat) => {
+    $(`#${stat}`).addClass('alarmStat');
+    $('#alarm').css('display', 'inline-flex'); 
+}
+
+Vent.silenceAlarm = (stat) => {
+    $(`#${stat}`).removeClass('alarmStat');
+    $('#alarm').css('display', 'none'); 
 }
 
 $(document).ready(function() {

@@ -1,6 +1,8 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="/static/css/index.css">
+    <link href='https://fonts.googleapis.com/css?family=Red+Hat+Text' rel='stylesheet' type='text/css'>
+    
     <!-- external modules -->
     <script type="text/javascript" src="/static/js/jquery-1.11.3.js"></script>
     <!--<script type="text/javascript" src="/static/js/velocity.min.js"></script>-->
@@ -15,8 +17,12 @@
     <div class="body">
       
       <div id="demographics">
-	      <span class="icon" id="gender">+</span>
+        <span class="icon" id="gender">+</span>
         <span id="patientInfo">BW 60 kg</span>
+      </div>
+      <div id="alarm">
+        <img src="./../static/img/alarm.svg" alt="alarm">
+        <h2>High Pressure</h2>
       </div>
       <div id="dateAndTime">
         <span class="dtText" id="time"></span>
@@ -56,8 +62,8 @@
         </div>
       </div>
 
-      <div class="stat cell" id="peep2">
-        <h3 class="sensor-stat-label">PEEP</h3>
+      <div class="stat cell" id="vtbw">
+        <h3 class="sensor-stat-label">VT/BW</h3>
         <div>
           <h1 class="stat-value">5.5</h1>
           <h1 class="stat-value-unit">ml/kg</h1>
@@ -82,14 +88,11 @@
           <h3 class="value">15</h3>
         </div>
       </div>
-
-      <div id="alarms">
-      </div>
       
       <div id="controls" class="cell">
         <div class="control" id="menu_0">
           <h3 class="title">MODE</h3>
-          <h3 id="modeValue" class="value">Volume Control</h3>
+          <h3 id="modeValue" class="value">PCV</h3>
         </div>
         <div class="control" id="menu_1">
           <h3 class="title">PEEP</h3>
@@ -106,6 +109,12 @@
         <div class="control" id="menu_4">
           <h3 class="title">VT</h3>
           <h3 class="value" id="vtValue"></h3>
+        </div>
+      </div>
+
+      <div id="alarmControls" class="cell">
+        <div class="control">
+          <h3 class="value">Alarm Settings</h3>
         </div>
       </div>
       
