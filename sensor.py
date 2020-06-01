@@ -6,16 +6,19 @@ import logging
 import board
 import busio
 import bme680
+import d6f
 
 import adafruit_lps35hw as LPS
 import adafruit_ads1x15.ads1115 as ADS
 import adafruit_mprls as MPRLS
 from adafruit_ads1x15.analog_in import AnalogIn
+import rpi2c
 import valve
 
-i2c = busio.I2C(board.SCL, board.SDA)
+i2c_in = rpi2c.rpi_i2c(1)
+i2c_ex = rpi2c.rpi_i2c(3)
 
-class FlowSensor:
+class FlowSensorADS:
     class Data:
         def __init__(self):
             self.rate = 0
@@ -27,7 +30,7 @@ class FlowSensor:
         
     def read(self):
         self.data.rate = self.chan.voltage
-        
+
 class PressureSensorBME:
     class Data:
         def __init__(self):
@@ -60,6 +63,18 @@ class PressureSensorBME:
             self.data.temperature = self.bme.data.temperature
             self.data.humidity = self.bme.data.humidity
 
+class FlowSensorD6F:
+    class Data:
+        def __init__(self):
+            self.rate = 0
+
+    def __init__(self, i2c):
+        self.flow = d6f.D6F70A(i2c)
+        self.data = self.Data()
+
+    def read(self):
+        self.data.rate = self.flow.read_flow()
+
 class PressureSensorLPS:
     class Data:
         def __init__(self):
@@ -67,7 +82,7 @@ class PressureSensorLPS:
             self.temperature = 0
             self.humidity = 0
 
-    def __init__(self, address=0x5D):
+    def __init__(self, i2c, address=0x5D):
         self.lps = LPS.LPS35HW(i2c, address=address)
         self.lps.data_rate = LPS.DataRate.RATE_75_HZ
         self.data = self.Data()
@@ -86,7 +101,7 @@ class PressureSensorMPRLS:
             self.temperature = 0
             self.humidity = 0
 
-    def __init__(self, address=0x5D):
+    def __init__(self, i2c, address=0x5D):
         self.mprls = MPRLS.MPRLS(i2c)
         self.data = self.Data()
 
@@ -101,92 +116,102 @@ def check_pressure(pressure, breathing):
             p = Process(target=valve.breath_relay, args=(breathing,2))
             p.start()
 
-def sensor_loop(times, tank_pressure, breath_pressure, v1_pressure, v2_pressure, flow, idx, count, debug):
-    pressure_1 = PressureSensorLPS(address=0x5d)
-    pressure_2 = PressureSensorLPS(address=0x5c)
-    pressure_3 = PressureSensorMPRLS()
+def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
+    for i in range(0,100):
+        time.sleep(0.0001)
+        pressure_in_1.read()
+        pressure_in_2.read()
+        pressure_ex_1.read()
+        pressure_ex_2.read()
+            
+def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_pressure_2, ex_flow, idx, count, debug):
+    # inspiration 
+    pressure_in_1 = PressureSensorLPS(i2c_in, address=0x5d)
+    pressure_in_2 = PressureSensorLPS(i2c_in, address=0x5c)
+    flow_in = FlowSensorD6F(i2c_in)
+
+    # expiration
+    pressure_ex_1 = PressureSensorLPS(i2c_ex, address=0x5d)
+    pressure_ex_2 = PressureSensorLPS(i2c_ex, address=0x5c)
+    flow_ex = FlowSensorD6F(i2c_ex)
+
     breathing = Value('i', 0)
     dc = 1
 
-    # start calibration routine
-    for i in range(0,100):
-        time.sleep(0.0001)
-        pressure_1.read()
-        pressure_2.read()
-        pressure_3.read()
-
-    # zero out sensors
-    pressure_1.zero_pressure()
-    pressure_2.zero_pressure()
-
-    # clear readings
-    for i in range(0,100):
-        time.sleep(0.0001)
-        pressure_1.read()
-        pressure_2.read()
-        pressure_3.read()
+    # calibration routine
+    sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
+    pressure_in_1.zero_pressure()
+    pressure_in_2.zero_pressure()
+    pressure_ex_1.zero_pressure()
+    pressure_ex_2.zero_pressure()
+    sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
 
     while True:
-        pressure_1.read()
-        pressure_2.read()
-        pressure_3.read()
+        pressure_in_1.read()
+        pressure_in_2.read()
+        pressure_ex_1.read()
+        pressure_ex_2.read()
+        #flow_in.read()
+        #flow_ex.read()
 
         idx.value += 1
         if idx.value >= count.value:
             idx.value = 0
 
-        t = time.time()
-        p1 = pressure_1.data.pressure
-        p2 = pressure_2.data.pressure
-        dp = abs(p2-p1)
-        f = 7.33656*(dp**0.5)
-        bp = pressure_3.data.pressure
-
-        times[idx.value] = t
-        tank_pressure[idx.value] = 1.0
-        breath_pressure[idx.value] = bp
-        v1_pressure[idx.value] = p1
-        v2_pressure[idx.value] = p2
-        #flow[idx.value] = flow_sensor.data.rate
-        flow[idx.value] = f
+        # update timestamp
+        times[idx.value] = time.time()
         
+        # inspiration
+        p1 = pressure_in_1.data.pressure
+        p2 = pressure_in_2.data.pressure
+        in_pressure_1[idx.value] = p1
+        in_pressure_2[idx.value] = p2
+        # in_flow[idx.value] = flow_in.data.rate
+        in_flow[idx.value] = 13.75 * (abs(p2-p1)**0.5)
+        
+        # expiration
+        p1 = pressure_ex_1.data.pressure
+        p2 = pressure_ex_2.data.pressure
+        ex_pressure_1[idx.value] = p1
+        ex_pressure_2[idx.value] = p2
+        # ex_flow[idx.value] = flow_ex.data.rate
+        ex_flow[idx.value] = 9.75 * (abs(p2-p1)**0.5)
+                
         #check_pressure(breath_pressure[idx.value], breathing)
         if debug is not None:
             dc -= 1;
             if dc == 0:
                 dc = debug
-                print("%f %f %f %f %f" % (t, p1, p2, f, bp))
+                print("%f %f %f %f %f %f %f" % (
+                    times[idx.value],
+                    in_pressure_1[idx.value],
+                    in_pressure_2[idx.value],
+                    in_flow[idx.value],
+                    ex_pressure_1[idx.value],
+                    ex_pressure_2[idx.value],
+                    ex_flow[idx.value]))
              
-        time.sleep(0.0001)
+        time.sleep(0.010) # 75Hz
     
 if __name__ == '__main__':
     idx = Value('i', 0)
     count = Value('i', 1000)
     times = Array('d', range(count.value))
-    tank_pressure = Array('d', range(count.value))
-    breath_pressure = Array('d', range(count.value))
-    v1_pressure = Array('d', range(count.value))
-    v2_pressure = Array('d', range(count.value))
-    flow = Array('d', range(count.value))
+    in_pressure_1 = Array('d', range(count.value))
+    in_pressure_2 = Array('d', range(count.value))
+    in_flow = Array('d', range(count.value))
+    ex_pressure_1 = Array('d', range(count.value))
+    ex_pressure_2 = Array('d', range(count.value))
+    ex_flow = Array('d', range(count.value))
     
-    p = Process(target=sensor_loop, args=(times, tank_pressure, breath_pressure, v1_pressure, v2_pressure, flow, idx, count, 1))
-    p.start()
+    p = Process(target=sensor_loop, args=(
+        times,
+        in_pressure_1, in_pressure_2, in_flow,
+        ex_pressure_1, ex_pressure_2, ex_flow,
+        idx, count, 1))
 
-    last = 0
-    while True:
-        curr = idx.value
-        if last > curr:
-            m_times = times[last:] + times[:curr]
-            m_tank_pressure = tank_pressure[last:] + tank_pressure[:curr]
-            m_breath_pressure = breath_pressure[last:] + breath_pressure[:curr]
-            m_flow = flow[last:]+flow[:curr]
-        else:
-            m_times = times[last:curr]
-            m_tank_pressure = tank_pressure[last:curr]
-            m_breath_pressure = breath_pressure[last:curr]
-            m_flow = flow[last:curr]
-        last = curr
-        time.sleep(1)
-        
-    print('Bye')
+    p.start()
+    input()
+    p.terminate()
+
 

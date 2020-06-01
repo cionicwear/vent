@@ -71,8 +71,8 @@ def sensors():
     values = {
         'samples' : len(times),
         'times' : times,
-        'pressure' : g.tank_pressure[last:curr],
-        'humidity' : g.breath_pressure[last:curr],
+        'pressure' : g.v1_pressure[last:curr],
+        'humidity' : g.v2_pressure[last:curr],
         'temperature' : g.flow[last:curr]
     }
     return jsonify(values)
@@ -108,7 +108,6 @@ def hello():
 
 
 if __name__ == '__main__':
-
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
         g.times,
