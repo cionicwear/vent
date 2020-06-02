@@ -478,7 +478,7 @@ html {
 }
 
 .confirmCancel {
-    display: flex;
+    display: none;
     flex-direction: column;
     padding: 0px;
 
@@ -502,15 +502,7 @@ html {
     height: 40px;
     left: 0px;
     top: 0px;
-
     border-radius: 10px;
-
-    /* Inside Auto Layout */
-
-    flex: none;
-    order: 0;
-    align-self: flex-start;
-    margin: 0px 0px;
 }
 
 .confirm {
@@ -523,17 +515,12 @@ html {
     height: 40px;
     left: 0px;
     top: 40px;
+    border-radius: 10px;
+}
 
+.ccActive {
     border: 2px solid #FFFFFF;
     box-sizing: border-box;
-    border-radius: 10px;
-
-    /* Inside Auto Layout */
-
-    flex: none;
-    order: 1;
-    align-self: center;
-    margin: 0px 0px;
 }
 
 .confirmCancel img {

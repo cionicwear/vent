@@ -27,6 +27,9 @@ Vent._last = 0;
 
 Vent._timer = null;
 Vent._requested = 1;
+Vent._isConfirming = false;
+Vent._confirmSelected= true;
+Vent._oldVal = null;
 
 Vent.getdata = function() {
     var dataset = []
@@ -207,20 +210,36 @@ Vent.listen = function() {
             case "KeyS":
                 return Vent.alarm('boost');
             case "KeyJ":
+                if (Vent._isConfirming) {
+                    Vent.ccScroll();
+                    break;
+                }
                 if (Vent._inFocus) {
                     Vent.decrementValue();
                     break;
                 }
                 else return Vent.menu_scroll(-1);
             case "KeyK":
-                if (Vent._inFocus) {
-                    Vent.updateSettings();
+                if (Vent._isConfirming) {
+                    $('#menu_'+Vent._focus+' .confirmCancel').css('display', 'none');
                     Vent._inFocus = false;
                     $('.control').removeClass('focused');
+                    Vent._isConfirming = false;
+                    Vent.updateSettings();
+                    break;
+                }
+                else if (Vent._inFocus) {
+                    $('#menu_'+Vent._focus+' .confirmCancel').css('display', 'flex');
+                    $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccActive');
+                    Vent._isConfirming = true;
                     break;
                 }
                 else return Vent.menu_focus();
             case "KeyL":
+                if (Vent._isConfirming) {
+                    Vent.ccScroll();
+                    break;
+                }
                 if (Vent._inFocus) {
                     Vent.incrementValue();
                     break;
@@ -260,6 +279,10 @@ Vent.menu_focus = function() {
     $('.control').removeClass('focused');
     $('#menu_'+Vent._focus).addClass('focused');
     Vent._inFocus = true
+
+    // store old value
+    const [field, _] = Vent.getFieldByFocus();
+    Vent._oldVal = Vent['settings'][field];
 };
 
 Vent.menu_highlight = function() {
@@ -347,9 +370,20 @@ Vent.getFieldByFocus = () => {
 }
 
 Vent.updateSettings = () => {
-    const [field, _] = Vent.getFieldByFocus();
-    const data = { [field]: Vent['settings'][field] };
-    Vent.asyncReq('POST', '/settings', data);
+    const [field, id] = Vent.getFieldByFocus();
+
+    if (Vent._confirmSelected) {
+        // update settings
+        const data = { [field]: Vent['settings'][field] };
+        Vent.asyncReq('POST', '/settings', data);
+    } else {
+        // set back to old val + reset UI
+        Vent['settings'][field] = Vent._oldVal;
+        Vent._oldVal = null;
+        $(`#${id}`).text(`${Vent['settings'][field]}`);
+        $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccActive');
+        $('#menu_'+Vent._focus+' .confirmCancel .confirm').removeClass('ccActive');
+    }
 }
 
 Vent.setTime = () => {
@@ -423,6 +457,18 @@ Vent.silenceAlarm = () => {
 
     Vent._alarmType = null;
     Vent._alarmStat = null;
+}
+
+Vent.ccScroll = () => {
+    if (Vent._confirmSelected) {
+        $('#menu_'+Vent._focus+' .confirmCancel .confirm').removeClass('ccActive');
+        $('#menu_'+Vent._focus+' .confirmCancel .cancel').addClass('ccActive');
+        Vent._confirmSelected = false;
+    } else {
+        $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccActive');
+        $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccActive');
+        Vent._confirmSelected = true;
+    }
 }
 
 $(document).ready(function() {
