@@ -37,8 +37,7 @@ html {
     grid-row: 6;
     display: grid;
     grid-gap: 4px;
-    /* Space between items */
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: repeat(2, 70px) repeat(6, 1fr);
     overflow: hidden;
     border-radius: 10px 10px 10px 10px;
     margin-right: 10px;
@@ -446,6 +445,7 @@ html {
     font-weight: 500;
     font-size: 12px;
     line-height: 16px;
+    width: 50px;
 }
 
 #o2Boost .content .value {
