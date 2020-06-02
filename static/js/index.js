@@ -400,7 +400,8 @@ Vent.triggerAlarm = (type, stat, text) => {
 
     const alarmClass = Vent.getAlarmCSSClassByType;
     $(`#${stat}`).addClass(alarmClass);
-    $(`#controls .alarmSettings`).addClass(alarmClass);
+
+    if (type === 'high') $(`#controls .alarmSettings`).addClass(alarmClass);
     $(`#${stat} .stat-value`).addClass('whiteText');
     $(`#${stat} .stat-value-unit`).addClass('whiteText');
     $(`#dateAndTime`).addClass('alarm');
@@ -418,7 +419,7 @@ Vent.silenceAlarm = () => {
     $(`#${Vent._alarmStat} .stat-value-unit`).removeClass('whiteText');
     $(`#dateAndTime`).removeClass('alarm');
     $('#alarm').css('display', 'none');
-    $(`#alarm`).removeClass('alarm');
+    $(`#alarm`).removeClass(alarmClass);
 
     Vent._alarmType = null;
     Vent._alarmStat = null;

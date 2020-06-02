@@ -43,7 +43,7 @@ html {
     border-radius: 10px 10px 10px 10px;
     margin-right: 10px;
     margin-left: 10px;
-    margin-bottom: 20px;
+    margin-bottom: -10px;
 }
 
 #demographics {
@@ -73,8 +73,8 @@ html {
 #dateAndTime.alarm {
     grid-column: 5;
     grid-row: 1;
-    margin-left: 18px;
     text-align: left;
+    justify-content: left;
 }
 
 #alarm {
@@ -160,7 +160,7 @@ html {
     grid-column: 6;
     grid-row: 2/3;
     position: relative;
-    margin-right: 12px;
+    margin-right: 10px;
 }
 
 #hstats {
@@ -168,21 +168,21 @@ html {
     /* grid-row: 3/5; */
     grid-row: 3;
     position: relative;
-    margin-right: 12px;
+    margin-right: 10px;
 }
 
 #fio2 {
     grid-column: 6;
     grid-row: 3;
     position: relative;
-    margin-right: 12px;
+    margin-right: 10px;
 }
 
 #rr {
     grid-column: 6;
     grid-row: 4;
     position: relative;
-    margin-right: 12px;
+    margin-right: 10px;
 }
 
 #ieRatio {
@@ -202,7 +202,7 @@ html {
     grid-column: 6;
     grid-row: 5;
     position: relative;
-    margin-right: 12px;
+    margin-right: 10px;
 }
 
 .line {
@@ -269,21 +269,7 @@ html {
 }
 
 .cell {
-    margin: 2px 2px 2px 2px;
-}
-
-.top {
-    /* float: top;
-    height: 49%; */
-    grid-column: 6;
-    grid-row: 3;
-    position: relative;
-    margin-right: 12px;
-}
-
-.bottom {
-    float: bottom;
-    height: 49%;
+    margin: 2px 2px 8px 8px;
 }
 
 .sensor-stat-label {
@@ -406,7 +392,6 @@ html {
 
 .chart.cell {
     margin-left: 10px;
-    margin-right: 12px;
 }
 
 .whiteText {
