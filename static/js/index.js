@@ -221,11 +221,9 @@ Vent.listen = function() {
                 else return Vent.menu_scroll(-1);
             case "KeyK":
                 if (Vent._isConfirming) {
-                    $('#menu_'+Vent._focus+' .confirmCancel').css('display', 'none');
                     Vent._inFocus = false;
-                    $('.control').removeClass('focused');
                     Vent._isConfirming = false;
-                    Vent.updateSettings();
+                    Vent.submitCCUI();
                     break;
                 }
                 else if (Vent._inFocus) {
@@ -370,6 +368,7 @@ Vent.getFieldByFocus = () => {
 }
 
 Vent.updateSettings = () => {
+    console.log('suhh');
     const [field, id] = Vent.getFieldByFocus();
 
     if (Vent._confirmSelected) {
@@ -381,9 +380,9 @@ Vent.updateSettings = () => {
         Vent['settings'][field] = Vent._oldVal;
         Vent._oldVal = null;
         $(`#${id}`).text(`${Vent['settings'][field]}`);
-        $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccActive');
-        $('#menu_'+Vent._focus+' .confirmCancel .confirm').removeClass('ccActive');
     }
+
+    Vent.resetCCUI();
 }
 
 Vent.setTime = () => {
@@ -469,6 +468,43 @@ Vent.ccScroll = () => {
         $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccActive');
         Vent._confirmSelected = true;
     }
+}
+
+Vent.resetCCUI = () => {
+    $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccActive');
+    $('#menu_'+Vent._focus+' .confirmCancel .confirm').removeClass('ccActive');
+    $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccSubmit');
+    $('#menu_'+Vent._focus+' .confirmCancel .confirm').removeClass('ccSubmit');
+
+    $('#menu_'+Vent._focus+' .confirmCancel .confirm').css('display', 'flex');
+    $('#menu_'+Vent._focus+' .confirmCancel .cancel').css('display', 'flex');
+
+    $('#menu_'+Vent._focus+' .confirmCancel').css('display', 'none');
+    $('#menu_'+Vent._focus+' .confirmCancel').css('top', '-86px');
+
+    $('#menu_'+Vent._focus).removeClass('ccConfirmBorder');
+    $('#menu_'+Vent._focus).removeClass('ccCancelBorder');
+    $('.control').removeClass('focused');
+
+    Vent._confirmSelected = true;
+}
+
+Vent.submitCCUI = () => {
+    // update top px to only show 1 elemement
+    $('#menu_'+Vent._focus+' .confirmCancel').css('top', '-46px');
+
+    if (Vent._confirmSelected) {
+        $('#menu_'+Vent._focus+' .confirmCancel .cancel').css('display', 'none');
+        $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccSubmit');
+        $('#menu_'+Vent._focus).addClass('ccConfirmBorder');
+
+    } else {
+        $('#menu_'+Vent._focus+' .confirmCancel .confirm').css('display', 'none');
+        $('#menu_'+Vent._focus+' .confirmCancel .cancel').addClass('ccSubmit');
+        $('#menu_'+Vent._focus).addClass('ccCancelBorder');
+    }
+
+    setTimeout(Vent.updateSettings, 1000);
 }
 
 $(document).ready(function() {
