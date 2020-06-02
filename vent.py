@@ -48,11 +48,12 @@ class GlobalState():
     idx = Value('i', 0)
     count = Value('i', 10000)
     times = Array('d', range(10000))
-    tank_pressure = Array('d', range(10000))
-    breath_pressure = Array('d', range(10000))
-    flow = Array('d', range(10000))
-    v1_pressure = Array('d', range(count.value))
-    v2_pressure = Array('d', range(count.value))
+    in_pressure_1 = Array('d', range(count.value))
+    in_pressure_2 = Array('d', range(count.value))
+    in_flow = Array('d', range(count.value))
+    ex_pressure_1 = Array('d', range(count.value))
+    ex_pressure_2 = Array('d', range(count.value))
+    ex_flow = Array('d', range(count.value))
     breathing = Value('i', 0)
     rr = Value('i', 0)
     vt = Value('i', 0)
@@ -68,12 +69,19 @@ def sensors():
     if last < 0:
         last = 0
     times = g.times[last:curr]
+    in_flow = g.in_flow[last:curr]
+    ex_flow = g.ex_flow[last:curr]
+    flow = in_flow
+    for i, f in enumerate(flow):
+        if ex_flow[i] > f:
+            flow[i] = -ex_flow[i]
+            
     values = {
         'samples' : len(times),
         'times' : times,
-        'pressure' : g.v1_pressure[last:curr],
-        'humidity' : g.v2_pressure[last:curr],
-        'temperature' : g.flow[last:curr]
+        'pressure' : g.in_pressure_2[last:curr],
+        'flow' : in_flow,
+        'volume' : g.ex_pressure_2[last:curr]
     }
     return jsonify(values)
 
@@ -111,15 +119,10 @@ if __name__ == '__main__':
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
         g.times,
-        g.tank_pressure,
-        g.breath_pressure,
-        g.v1_pressure,
-        g.v2_pressure,
-        g.flow,
-        g.idx,
-        g.count,
-        60
-    ))
+        g.in_pressure_1, g.in_pressure_2, g.in_flow,
+        g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
+        g.idx, g.count))
+
     p.start()
 
     # start app

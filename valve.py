@@ -69,19 +69,20 @@ if __name__ == '__main__':
 
     print('Hit <ENTER> to disconnect')
     while True:
-        duty = user_int('Enter PEEP duty')
-        peep_i2c(duty)
+        #duty = user_int('Enter PEEP duty')
+        #peep_i2c(duty)
         duty = user_int('Enter Breath duty (0 to exit)')
         if (duty == 0):
             for i in range(80,100):
 
                 # reasonably good volume control mode
-                breath_i2c(breathing, 79, i, i-1, 0.05, 0.95, maintain=0)
+                breath_i2c(breathing, 80, 100, 99, 0.1, 0.90, maintain=0)
                 
                 # best effort pressure control
-                # breath_i2c(breathing, 80, 100, 80, 0.02, 1.08, maintain=0)
-                
-                time.sleep(2)
+                #breath_i2c(breathing, 80, 100, 80, 0.02, 1.08, maintain=0)       
+
+                # expiration time
+                time.sleep(4)
             break
         else:
             breath_i2c(breathing, duty-1, duty, duty-1, 0, 1)

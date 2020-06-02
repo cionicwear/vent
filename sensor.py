@@ -1,5 +1,6 @@
 # Sensor Manager
 import time
+from datetime import datetime
 from multiprocessing import Process, Queue, Array, Value
 import logging
 
@@ -17,6 +18,8 @@ import valve
 
 i2c_in = rpi2c.rpi_i2c(1)
 i2c_ex = rpi2c.rpi_i2c(3)
+
+VCO = 2.40256
 
 class FlowSensorADS:
     class Data:
@@ -88,7 +91,8 @@ class PressureSensorLPS:
         self.data = self.Data()
 
     def read(self):
-        self.data.pressure = self.lps.pressure
+        # pressure reading in hPa convert to Pa
+        self.data.pressure = self.lps.pressure * 100 
         self.data.temperature = self.lps.temperature
 
     def zero_pressure(self):
@@ -118,22 +122,22 @@ def check_pressure(pressure, breathing):
 
 def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
     for i in range(0,100):
-        time.sleep(0.0001)
+        time.sleep(0.005)
         pressure_in_1.read()
         pressure_in_2.read()
         pressure_ex_1.read()
         pressure_ex_2.read()
             
-def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_pressure_2, ex_flow, idx, count, debug):
+def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_pressure_2, ex_flow, idx, count):
     # inspiration 
     pressure_in_1 = PressureSensorLPS(i2c_in, address=0x5d)
     pressure_in_2 = PressureSensorLPS(i2c_in, address=0x5c)
-    flow_in = FlowSensorD6F(i2c_in)
+    # flow_in = FlowSensorD6F(i2c_in)
 
     # expiration
     pressure_ex_1 = PressureSensorLPS(i2c_ex, address=0x5d)
     pressure_ex_2 = PressureSensorLPS(i2c_ex, address=0x5c)
-    flow_ex = FlowSensorD6F(i2c_ex)
+    # flow_ex = FlowSensorD6F(i2c_ex)
 
     breathing = Value('i', 0)
     dc = 1
@@ -146,6 +150,10 @@ def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_
     pressure_ex_2.zero_pressure()
     sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
 
+    # open outfile
+    fname = datetime.now().strftime("%Y-%m-%d-%H-%M-%S.out")
+    f = open(fname, "wb", 0)
+    
     while True:
         pressure_in_1.read()
         pressure_in_2.read()
@@ -167,7 +175,7 @@ def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_
         in_pressure_1[idx.value] = p1
         in_pressure_2[idx.value] = p2
         # in_flow[idx.value] = flow_in.data.rate
-        in_flow[idx.value] = 13.75 * (abs(p2-p1)**0.5)
+        in_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
         
         # expiration
         p1 = pressure_ex_1.data.pressure
@@ -175,23 +183,20 @@ def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_
         ex_pressure_1[idx.value] = p1
         ex_pressure_2[idx.value] = p2
         # ex_flow[idx.value] = flow_ex.data.rate
-        ex_flow[idx.value] = 9.75 * (abs(p2-p1)**0.5)
+        ex_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
                 
         #check_pressure(breath_pressure[idx.value], breathing)
-        if debug is not None:
-            dc -= 1;
-            if dc == 0:
-                dc = debug
-                print("%f %f %f %f %f %f %f" % (
-                    times[idx.value],
-                    in_pressure_1[idx.value],
-                    in_pressure_2[idx.value],
-                    in_flow[idx.value],
-                    ex_pressure_1[idx.value],
-                    ex_pressure_2[idx.value],
-                    ex_flow[idx.value]))
+
+        f.write(bytearray(b"%f %f %f %f %f %f %f\n" % (
+            times[idx.value],
+            in_pressure_1[idx.value],
+            in_pressure_2[idx.value],
+            in_flow[idx.value],
+            ex_pressure_1[idx.value],
+            ex_pressure_2[idx.value],
+            ex_flow[idx.value])))
              
-        time.sleep(0.010) # 75Hz
+        time.sleep(0.005) 
     
 if __name__ == '__main__':
     idx = Value('i', 0)
@@ -208,7 +213,7 @@ if __name__ == '__main__':
         times,
         in_pressure_1, in_pressure_2, in_flow,
         ex_pressure_1, ex_pressure_2, ex_flow,
-        idx, count, 1))
+        idx, count))
 
     p.start()
     input()
