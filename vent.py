@@ -54,6 +54,7 @@ class GlobalState():
     ex_pressure_1 = Array('d', range(count.value))
     ex_pressure_2 = Array('d', range(count.value))
     ex_flow = Array('d', range(count.value))
+    flow = Array('d', range(count.value))
     breathing = Value('i', 0)
     rr = Value('i', 0)
     vt = Value('i', 0)
@@ -69,18 +70,11 @@ def sensors():
     if last < 0:
         last = 0
     times = g.times[last:curr]
-    in_flow = g.in_flow[last:curr]
-    ex_flow = g.ex_flow[last:curr]
-    flow = in_flow
-    for i, f in enumerate(flow):
-        if ex_flow[i] > f:
-            flow[i] = -ex_flow[i]
-            
     values = {
         'samples' : len(times),
         'times' : times,
-        'pressure' : g.in_pressure_2[last:curr],
-        'flow' : in_flow,
+        'pressure' : g.in_pressure_1[last:curr],
+        'flow' : g.flow[last:curr],
         'volume' : g.ex_pressure_2[last:curr]
     }
     return jsonify(values)
@@ -114,17 +108,17 @@ def breath():
 def hello():
     return render_template('index.html')
 
-
-if __name__ == '__main__':
-    # start sensor process
+def main():
     p = Process(target=sensor.sensor_loop, args=(
-        g.times,
+        g.times, g.flow, g.breathing,
         g.in_pressure_1, g.in_pressure_2, g.in_flow,
         g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
         g.idx, g.count))
 
     p.start()
 
+if __name__ == '__main__':
+    main()
     # start app
-    app.run(debug=True, host='0.0.0.0', port=PORT)
+    app.run(debug=False, host='0.0.0.0', port=PORT)
     

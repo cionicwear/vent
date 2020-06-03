@@ -30,29 +30,44 @@ def breath_relay(breathing, seconds):
     relay.value = False
     breathing.value = 0
 
-def breath_i2c(breathing, start, duty, end, up, down, maintain=0):
+def throttle_i2c(throttle):
+    breath_valve.throttle = throttle/100.0
+    
+def breath_i2c(breathing,
+               start, start_time,
+               top, top_time,
+               down, down_time,
+               bottom, bottom_time):
+    
     breathing.value = 1
 
-    up_step = up/(duty-start)
-    down_step = down/(duty-end)
-    print(up_step, down_step)
+    print("breathing %f %f %f %f %f %f %f %f" %
+          (start, start_time,
+           top, top_time,
+           down, down_time,
+           bottom, bottom_time))
     
-    # increase flow
-    for i in range(start, duty, 1):
+    start_step = start_time/(top-start)
+    down_step = down_time/(top-down)
+        
+    # step up
+    for i in range(start, top, 1):
         breath_valve.throttle = (i/100.0)
-        time.sleep(up_step)
+        time.sleep(start_step)
 
-    # decrease flow
-    for i in range(duty, end, -1):
+    # hold top
+    breath_valve.throttle = top/100.0
+    time.sleep(top_time)
+    
+    # step down
+    for i in range(top, down, -1):
         breath_valve.throttle = (i/100.0)
         time.sleep(down_step)
 
-    
-    breath_valve.throttle = maintain/100
+    # hold bottom
+    breath_valve.throttle = bottom/100.0
     breathing.value = 0
-
-def peep_i2c(duty):
-    peep_valve.throttle = (duty/100)
+    time.sleep(bottom_time)
 
 def user_int(prompt, default=0):
     print(prompt)
@@ -63,32 +78,48 @@ def user_int(prompt, default=0):
     except Exception as e:
         print(e)
         return default
+
+def valve_loop(breathing,
+               start, start_time,
+               top, top_time,
+               down, down_time,
+               bottom, bottom_time,
+               count):
+    
+    for i in range(0, count):
+        breath_i2c(
+            breathing,
+            start, start_time,
+            top, top_time,
+            down, down_time,
+            bottom, bottom_time)
+
+    throttle_i2c(0)
         
 if __name__ == '__main__':
     breathing = Value('i', 0)
 
     print('Hit <ENTER> to disconnect')
     while True:
-        #duty = user_int('Enter PEEP duty')
-        #peep_i2c(duty)
         duty = user_int('Enter Breath duty (0 to exit)')
         if (duty == 0):
-            for i in range(80,100):
-
-                # reasonably good volume control mode
-                breath_i2c(breathing, 80, 100, 99, 0.1, 0.90, maintain=0)
+            # reasonably good volume control mode
+            valve_loop(
+                breathing,
+                80, 0.1,   # ramp up
+                90, 0.9,   # hold top
+                0,  0,     # ramp down
+                0,  2.0,    # hold bottom
+                20
+            )
                 
-                # best effort pressure control
-                #breath_i2c(breathing, 80, 100, 80, 0.02, 1.08, maintain=0)       
-
-                # expiration time
-                time.sleep(4)
+            # best effort pressure control
+            # breath_i2c(breathing, 90, 100, 80, 0.02, 1.98, maintain=0)
             break
         else:
-            breath_i2c(breathing, duty-1, duty, duty-1, 0, 1)
+            breath_i2c(breathing, duty-1, 0.1, duty, 0.9, 0, 0, 0, 2)
 
     breath_valve.throttle = 0
-    peep_valve.throttle = 0
     
     print('Bye')
 

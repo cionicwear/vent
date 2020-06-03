@@ -127,19 +127,24 @@ def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
         pressure_in_2.read()
         pressure_ex_1.read()
         pressure_ex_2.read()
-            
-def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_pressure_2, ex_flow, idx, count):
+
+
+def sensor_loop(times, flow, breathing,
+                in_pressure_1, in_pressure_2, in_flow,
+                ex_pressure_1, ex_pressure_2, ex_flow,
+                idx, count):
+
+    # make sure valve is off for calibration
+    valve.throttle_i2c(0)
+    time.sleep(5)
+
     # inspiration 
     pressure_in_1 = PressureSensorLPS(i2c_in, address=0x5d)
     pressure_in_2 = PressureSensorLPS(i2c_in, address=0x5c)
-    # flow_in = FlowSensorD6F(i2c_in)
-
     # expiration
     pressure_ex_1 = PressureSensorLPS(i2c_ex, address=0x5d)
     pressure_ex_2 = PressureSensorLPS(i2c_ex, address=0x5c)
-    # flow_ex = FlowSensorD6F(i2c_ex)
 
-    breathing = Value('i', 0)
     dc = 1
 
     # calibration routine
@@ -153,14 +158,32 @@ def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_
     # open outfile
     fname = datetime.now().strftime("%Y-%m-%d-%H-%M-%S.out")
     f = open(fname, "wb", 0)
+
+    # start the fixed valve process
     
+    v = Process(target=valve.valve_loop, args=(
+        breathing,
+        82, 0.1,   # ramp up
+        90, 0.9,   # hold top
+        82,  0,     # ramp down
+        82,  2.0,   # hold bottom
+        1200))
+    '''
+    v = Process(target=valve.valve_loop, args=(
+        breathing,
+        80, 0.02,   # ramp up
+        100, 0.02,   # hold top
+        75,  0.96,     # ramp down
+        0,  2.0,   # hold bottom
+        20))
+    '''
+    v.start()
+
     while True:
         pressure_in_1.read()
         pressure_in_2.read()
         pressure_ex_1.read()
         pressure_ex_2.read()
-        #flow_in.read()
-        #flow_ex.read()
 
         idx.value += 1
         if idx.value >= count.value:
@@ -174,7 +197,6 @@ def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_
         p2 = pressure_in_2.data.pressure
         in_pressure_1[idx.value] = p1
         in_pressure_2[idx.value] = p2
-        # in_flow[idx.value] = flow_in.data.rate
         in_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
         
         # expiration
@@ -182,13 +204,19 @@ def sensor_loop(times, in_pressure_1, in_pressure_2, in_flow, ex_pressure_1, ex_
         p2 = pressure_ex_2.data.pressure
         ex_pressure_1[idx.value] = p1
         ex_pressure_2[idx.value] = p2
-        # ex_flow[idx.value] = flow_ex.data.rate
         ex_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
-                
-        #check_pressure(breath_pressure[idx.value], breathing)
 
-        f.write(bytearray(b"%f %f %f %f %f %f %f\n" % (
+        if (breathing.value == 1):
+            flow[idx.value] = in_flow[idx.value]
+        else:
+            flow[idx.value] = -ex_flow[idx.value]
+
+        # spontaneous ventilation
+        # check_pressure(breath_pressure[idx.value], breathing)
+
+        f.write(bytearray(b"%f %f %f %f %f %f %f %f\n" % (
             times[idx.value],
+            flow[idx.value],
             in_pressure_1[idx.value],
             in_pressure_2[idx.value],
             in_flow[idx.value],
@@ -202,6 +230,10 @@ if __name__ == '__main__':
     idx = Value('i', 0)
     count = Value('i', 1000)
     times = Array('d', range(count.value))
+
+    breathing = Value('i', 0)
+    flow = Array('d', range(count.value))
+    
     in_pressure_1 = Array('d', range(count.value))
     in_pressure_2 = Array('d', range(count.value))
     in_flow = Array('d', range(count.value))
@@ -210,7 +242,7 @@ if __name__ == '__main__':
     ex_flow = Array('d', range(count.value))
     
     p = Process(target=sensor_loop, args=(
-        times,
+        times, flow, breathing,
         in_pressure_1, in_pressure_2, in_flow,
         ex_pressure_1, ex_pressure_2, ex_flow,
         idx, count))
