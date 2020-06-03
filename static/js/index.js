@@ -30,6 +30,7 @@ Vent._requested = 1;
 Vent._isConfirming = false;
 Vent._confirmSelected= true;
 Vent._oldVal = null;
+Vent._ccProgress = null;
 
 Vent.getdata = function() {
     var dataset = []
@@ -223,6 +224,7 @@ Vent.listen = function() {
                 if (Vent._isConfirming) {
                     Vent._inFocus = false;
                     Vent._isConfirming = false;
+                    Vent.finishCCProgressBar();
                     Vent.submitCCUI();
                     break;
                 }
@@ -230,6 +232,7 @@ Vent.listen = function() {
                     $('#menu_'+Vent._focus+' .confirmCancel').css('display', 'flex');
                     $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccActive');
                     Vent._isConfirming = true;
+                    Vent.updateCCProgressBar();
                     break;
                 }
                 else return Vent.menu_focus();
@@ -367,11 +370,10 @@ Vent.getFieldByFocus = () => {
     return [field, id];
 }
 
-Vent.updateSettings = () => {
-    console.log('suhh');
+Vent.updateSettings = (confirmed) => {
     const [field, id] = Vent.getFieldByFocus();
 
-    if (Vent._confirmSelected) {
+    if (confirmed) {
         // update settings
         const data = { [field]: Vent['settings'][field] };
         Vent.asyncReq('POST', '/settings', data);
@@ -472,7 +474,6 @@ Vent.ccScroll = () => {
 
 Vent.resetCCUI = () => {
     $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccActive');
-    $('#menu_'+Vent._focus+' .confirmCancel .confirm').removeClass('ccActive');
     $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccSubmit');
     $('#menu_'+Vent._focus+' .confirmCancel .confirm').removeClass('ccSubmit');
 
@@ -486,6 +487,7 @@ Vent.resetCCUI = () => {
     $('#menu_'+Vent._focus).removeClass('ccCancelBorder');
     $('.control').removeClass('focused');
 
+    $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccActive');
     Vent._confirmSelected = true;
 }
 
@@ -504,7 +506,35 @@ Vent.submitCCUI = () => {
         $('#menu_'+Vent._focus).addClass('ccCancelBorder');
     }
 
-    setTimeout(Vent.updateSettings, 1000);
+    setTimeout(function() {
+        Vent.updateSettings(Vent._confirmSelected);
+    }, 1000);
+}
+
+Vent.updateCCProgressBar = () => {
+    let width = 0;
+    let i = 0;
+    $('#menu_'+Vent._focus+' .ccProgress').css('display', 'block');
+    const elem = document.querySelector(`#menu_${Vent._focus} .ccBar`);
+
+    Vent._ccProgress = setInterval(frame, 30);
+    function frame() {
+        if (width >= 100) {
+            Vent.finishCCProgressBar();
+            Vent.updateSettings(false);
+            Vent._inFocus = false;
+            Vent._isConfirming = false;
+            i = 0;
+        } else {
+            width++;
+            elem.style.width = width + "%";
+        }
+    }
+}
+
+Vent.finishCCProgressBar = () => {
+    clearInterval(Vent._ccProgress);
+    $('#menu_'+Vent._focus+' .ccProgress').css('display', 'none');
 }
 
 $(document).ready(function() {

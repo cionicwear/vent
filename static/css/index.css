@@ -547,6 +547,20 @@ html {
     border-radius: 9px;
 }
 
+.ccProgress {
+    display: none;
+    /* display: block; */
+    width: 100%;
+    background-color: #BFBFBF;
+    position: absolute;
+    bottom: 9;
+}
+
+.ccBar {
+    width: 0%;
+    height: 4px;
+    background-color: #3460D0;
+}
 
 /* @media (min-height: 500px) {
     #buttons {
