@@ -76,6 +76,7 @@ html {
     grid-row: 1;
     text-align: left;
     justify-content: left;
+    margin-left: 8px;
 }
 
 #alarm {
