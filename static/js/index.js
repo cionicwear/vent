@@ -2,15 +2,16 @@ var Vent = Vent || {};
 
 var MAX_SAMPLES = 500;
 
-Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0}
+Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0, 'PINSP': 0, 'IE': 0}
 Vent._inFocus = false
 Vent.sensorReadings = {'Ppeak': 0, 'PEEP': 0, 'VT': 0, 'RR': 0, 'FiO2': 0, 'IE': 0}
-Vent.MODES = ['VCV', 'PCV', 'PSV'];
+Vent.MODES = ['PCV', 'VCV', 'PSV'];
 Vent.MODE_TO_INPUTS = {
     'PCV': ['PINSP', 'RR', 'IE', 'PEEP'],
     'VCV': ['PEEP', 'FiO2', 'RR', 'VT'],
     'PSV': ['FiO2', 'PINSP', 'RR', 'PEEP']
 }
+Vent._mode = 'PCV';
 
 Vent._charts = {};
 Vent._x = {};
@@ -221,15 +222,26 @@ Vent.listen = function() {
                 }
                 else return Vent.menu_scroll(-1);
             case "KeyK":
-                if (Vent._isConfirming) {
+                const menuItem = Vent._focus;
+                // handle Modes
+                if (menuItem === 1 && Vent._inFocus) {
+                    Vent._inFocus = false;
+                    Vent.resetCCUI(menuItem);
+                    $(".elipseContainer img").attr("src","./../static/img/elipse.svg");
+                    $(".elipseContainer .activeElipse").attr("src","./../static/img/active_elipse.svg");
+                    break;
+                }
+
+                // handle Inputs
+                else if (Vent._isConfirming) {
                     Vent._inFocus = false;
                     Vent._isConfirming = false;
                     Vent.submitCCUI(Vent._confirmSelected, Vent._focus);
                     break;
                 }
                 else if (Vent._inFocus) {
-                    $('#menu_'+Vent._focus+' .confirmCancel').css('display', 'flex');
-                    $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccActive');
+                    $('#menu_'+menuItem+' .confirmCancel').css('display', 'flex');
+                    $('#menu_'+menuItem+' .confirmCancel .confirm').addClass('ccActive');
                     Vent._isConfirming = true;
                     break;
                 }
@@ -283,8 +295,15 @@ Vent.menu_focus = function() {
     const [field, _] = Vent.getFieldByFocus(Vent._focus);
     Vent._oldVal[field] = Vent['settings'][field];
 
-    // show progress bar
-    Vent.updateCCProgressBar(field, Vent['settings'][field]);
+    // show progress bar if exists (ie not alarms or mode)
+    if (field != 'MODE' && field != 'ALARM') {
+        Vent.updateCCProgressBar(field, Vent['settings'][field]);
+    }
+    // we're working with modes
+    else if (field === 'MODE') {
+        $(".elipseContainer img").attr("src","./../static/img/selected_elipse.svg");
+        $(".elipseContainer .activeElipse").attr("src","./../static/img/selected_active_elipse.svg");
+    }
 };
 
 Vent.menu_highlight = function() {
@@ -325,6 +344,20 @@ Vent.decrementValue = (focusElem) => {
     
     // TODO: custom increments based on field type
     // TODO: custom bounds based on field type
+    if (field === 'MODE') {
+        const idx = Vent.MODES.indexOf(Vent._mode);
+        if (idx === 0) return;
+        
+        Vent._mode = Vent.MODES[idx - 1];
+        $(`#${id}`).text(`${Vent._mode}`);
+
+        // change elipses to match current idx
+        $(".elipseContainer .activeElipse").removeClass("activeElipse");
+        $(".elipseContainer img").attr("src","./../static/img/selected_elipse.svg");
+        $(`#elipse${idx-1}`).attr("src","./../static/img/selected_active_elipse.svg");
+        $(`#elipse${idx-1}`).addClass("activeElipse");
+    }
+
     if (Vent['settings'][field] > 0) {
         Vent['settings'][field] -= 1;
         $(`#${id}`).text(`${Vent['settings'][field]}`);
@@ -334,10 +367,22 @@ Vent.decrementValue = (focusElem) => {
 
 Vent.incrementValue = (focusElem) => {
     const [field, id] = Vent.getFieldByFocus(focusElem);
-
     // TODO: custom increments based on field type
     // TODO: custom bounds based on field type
-    if (Vent['settings'][field] < 10) {
+    if (field === 'MODE') {
+        const idx = Vent.MODES.indexOf(Vent._mode);
+        if (idx === Vent.MODES.length - 1) return;
+        Vent._mode = Vent.MODES[idx + 1];
+        $(`#${id}`).text(`${Vent._mode}`);
+
+        // change elipses to match current idx
+        $(".elipseContainer .activeElipse").removeClass("activeElipse");
+        $(".elipseContainer img").attr("src","./../static/img/selected_elipse.svg");
+        $(`#elipse${idx+1}`).attr("src","./../static/img/selected_active_elipse.svg");
+        $(`#elipse${idx+1}`).addClass("activeElipse");
+    }
+
+    else if (Vent['settings'][field] < 10) {
         Vent['settings'][field] += 1;
         $(`#${id}`).text(`${Vent['settings'][field]}`);
         Vent.updateCCProgressBar(field, Vent['settings'][field]);
@@ -351,9 +396,12 @@ Vent.getFieldByFocus = (focusElem) => {
     switch(focusElem){
         case 0: 
             // alarm settings
+            field = 'ALARM';
             break;
         case 1: 
             // switch mode
+            field = 'MODE';
+            id = 'modeValue'
             break;
         case 2:
             // peep
@@ -411,8 +459,6 @@ Vent.setDate = () => {
 
 Vent.initDataDOM = () => {
     // TODO change this so its scroll menu
-    Vent._mode =  document.getElementById('modeValue');
-
     Vent._peepValue = document.getElementById('peepValue');
     Vent._peepValue.innerText = `${Vent.settings['PEEP']}`;
 
