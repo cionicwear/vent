@@ -29,7 +29,7 @@ Vent._timer = null;
 Vent._requested = 1;
 Vent._isConfirming = false;
 Vent._confirmSelected= true;
-Vent._oldVal = null;
+Vent._oldVal = {};
 Vent._ccProgress = null;
 
 Vent.getdata = function() {
@@ -216,7 +216,7 @@ Vent.listen = function() {
                     break;
                 }
                 if (Vent._inFocus) {
-                    Vent.decrementValue();
+                    Vent.decrementValue(Vent._focus);
                     break;
                 }
                 else return Vent.menu_scroll(-1);
@@ -240,7 +240,7 @@ Vent.listen = function() {
                     break;
                 }
                 if (Vent._inFocus) {
-                    Vent.incrementValue();
+                    Vent.incrementValue(Vent._focus);
                     break;
                 }
                 else return Vent.menu_scroll(1);
@@ -280,8 +280,8 @@ Vent.menu_focus = function() {
     Vent._inFocus = true
 
     // store old value
-    const [field, _] = Vent.getFieldByFocus();
-    Vent._oldVal = Vent['settings'][field];
+    const [field, _] = Vent.getFieldByFocus(Vent._focus);
+    Vent._oldVal[field] = Vent['settings'][field];
 
     // show progress bar
     Vent.updateCCProgressBar(field, Vent['settings'][field]);
@@ -320,8 +320,8 @@ Vent.menu_select = function() {
     }	
 };
 
-Vent.decrementValue = () => {
-    const [field, id] = Vent.getFieldByFocus();
+Vent.decrementValue = (focusElem) => {
+    const [field, id] = Vent.getFieldByFocus(focusElem);
     
     // TODO: custom increments based on field type
     // TODO: custom bounds based on field type
@@ -332,8 +332,8 @@ Vent.decrementValue = () => {
     }
 }
 
-Vent.incrementValue = () => {
-    const [field, id] = Vent.getFieldByFocus();
+Vent.incrementValue = (focusElem) => {
+    const [field, id] = Vent.getFieldByFocus(focusElem);
 
     // TODO: custom increments based on field type
     // TODO: custom bounds based on field type
@@ -344,11 +344,11 @@ Vent.incrementValue = () => {
     }
 }
 
-Vent.getFieldByFocus = () => {
+Vent.getFieldByFocus = (focusElem) => {
     let field, id;
 
     // TODO: change cases based on active mode
-    switch(Vent._focus){
+    switch(focusElem){
         case 0: 
             // alarm settings
             break;
@@ -381,15 +381,15 @@ Vent.getFieldByFocus = () => {
 }
 
 Vent.updateSettings = (confirmed, focusElem) => {
-    const [field, id] = Vent.getFieldByFocus();
+    const [field, id] = Vent.getFieldByFocus(focusElem);
     if (confirmed) {
         // update settings
         const data = { [field]: Vent['settings'][field] };
         Vent.asyncReq('POST', '/settings', data);
     } else {
         // set back to old val + reset UI
-        Vent['settings'][field] = Vent._oldVal;
-        Vent._oldVal = null;
+        Vent['settings'][field] = Vent._oldVal[field];
+        Vent._oldVal[field] = null;
         $(`#${id}`).text(`${Vent['settings'][field]}`);
     }
 
