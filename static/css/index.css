@@ -326,6 +326,10 @@ html {
     text-align: right;
 }
 
+#rr .value span {
+    font-size: 12px;
+}
+
 #fio2 .unit, #rr .unit {
     margin-right: 10px;
     float: right;
@@ -491,6 +495,11 @@ html {
     background: linear-gradient(180deg, #2E2E2E 0%, #1B1B1B 100%);
     border-radius: 10px;
     z-index: 10;
+
+    font-family: Red Hat Text;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 12px;
 }
 
 .cancel {
