@@ -212,7 +212,7 @@ Vent.listen = function() {
                 return Vent.alarm('boost');
             case "KeyJ":
                 if (Vent._isConfirming) {
-                    Vent.ccScroll();
+                    Vent.ccScroll(Vent._confirmSelected, Vent._focus);
                     break;
                 }
                 if (Vent._inFocus) {
@@ -224,21 +224,19 @@ Vent.listen = function() {
                 if (Vent._isConfirming) {
                     Vent._inFocus = false;
                     Vent._isConfirming = false;
-                    Vent.finishCCProgressBar();
-                    Vent.submitCCUI();
+                    Vent.submitCCUI(Vent._confirmSelected, Vent._focus);
                     break;
                 }
                 else if (Vent._inFocus) {
                     $('#menu_'+Vent._focus+' .confirmCancel').css('display', 'flex');
                     $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccActive');
                     Vent._isConfirming = true;
-                    Vent.updateCCProgressBar();
                     break;
                 }
                 else return Vent.menu_focus();
             case "KeyL":
                 if (Vent._isConfirming) {
-                    Vent.ccScroll();
+                    Vent.ccScroll(Vent._confirmSelected, Vent._focus);
                     break;
                 }
                 if (Vent._inFocus) {
@@ -284,6 +282,9 @@ Vent.menu_focus = function() {
     // store old value
     const [field, _] = Vent.getFieldByFocus();
     Vent._oldVal = Vent['settings'][field];
+
+    // show progress bar
+    Vent.updateCCProgressBar(field, Vent['settings'][field]);
 };
 
 Vent.menu_highlight = function() {
@@ -322,21 +323,30 @@ Vent.menu_select = function() {
 Vent.decrementValue = () => {
     const [field, id] = Vent.getFieldByFocus();
     
-    Vent['settings'][field] -= 1;
-    $(`#${id}`).text(`${Vent['settings'][field]}`);
+    // TODO: custom increments based on field type
+    // TODO: custom bounds based on field type
+    if (Vent['settings'][field] > 0) {
+        Vent['settings'][field] -= 1;
+        $(`#${id}`).text(`${Vent['settings'][field]}`);
+        Vent.updateCCProgressBar(field, Vent['settings'][field]);
+    }
 }
 
 Vent.incrementValue = () => {
     const [field, id] = Vent.getFieldByFocus();
 
-    Vent['settings'][field] += 1;
-    $(`#${id}`).text(`${Vent['settings'][field]}`);
+    // TODO: custom increments based on field type
+    // TODO: custom bounds based on field type
+    if (Vent['settings'][field] < 10) {
+        Vent['settings'][field] += 1;
+        $(`#${id}`).text(`${Vent['settings'][field]}`);
+        Vent.updateCCProgressBar(field, Vent['settings'][field]);
+    }
 }
 
 Vent.getFieldByFocus = () => {
     let field, id;
 
-    // TODO: custom increments based on field type
     // TODO: change cases based on active mode
     switch(Vent._focus){
         case 0: 
@@ -370,9 +380,8 @@ Vent.getFieldByFocus = () => {
     return [field, id];
 }
 
-Vent.updateSettings = (confirmed) => {
+Vent.updateSettings = (confirmed, focusElem) => {
     const [field, id] = Vent.getFieldByFocus();
-
     if (confirmed) {
         // update settings
         const data = { [field]: Vent['settings'][field] };
@@ -384,7 +393,7 @@ Vent.updateSettings = (confirmed) => {
         $(`#${id}`).text(`${Vent['settings'][field]}`);
     }
 
-    Vent.resetCCUI();
+    Vent.resetCCUI(focusElem);
 }
 
 Vent.setTime = () => {
@@ -460,81 +469,70 @@ Vent.silenceAlarm = () => {
     Vent._alarmStat = null;
 }
 
-Vent.ccScroll = () => {
-    if (Vent._confirmSelected) {
-        $('#menu_'+Vent._focus+' .confirmCancel .confirm').removeClass('ccActive');
-        $('#menu_'+Vent._focus+' .confirmCancel .cancel').addClass('ccActive');
+Vent.ccScroll = (isConfirmSelected, focusElem) => {
+    if (isConfirmSelected) {
+        $('#menu_'+focusElem+' .confirmCancel .confirm').removeClass('ccActive');
+        $('#menu_'+focusElem+' .confirmCancel .cancel').addClass('ccActive');
         Vent._confirmSelected = false;
     } else {
-        $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccActive');
-        $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccActive');
+        $('#menu_'+focusElem+' .confirmCancel .confirm').addClass('ccActive');
+        $('#menu_'+focusElem+' .confirmCancel .cancel').removeClass('ccActive');
         Vent._confirmSelected = true;
     }
 }
 
-Vent.resetCCUI = () => {
-    $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccActive');
-    $('#menu_'+Vent._focus+' .confirmCancel .cancel').removeClass('ccSubmit');
-    $('#menu_'+Vent._focus+' .confirmCancel .confirm').removeClass('ccSubmit');
+Vent.resetCCUI = (focusElem) => {
+    $('#menu_'+focusElem+' .confirmCancel .cancel').removeClass('ccActive');
+    $('#menu_'+focusElem+' .confirmCancel .cancel').removeClass('ccSubmit');
+    $('#menu_'+focusElem+' .confirmCancel .confirm').removeClass('ccSubmit');
 
-    $('#menu_'+Vent._focus+' .confirmCancel .confirm').css('display', 'flex');
-    $('#menu_'+Vent._focus+' .confirmCancel .cancel').css('display', 'flex');
+    $('#menu_'+focusElem+' .confirmCancel .confirm').css('display', 'flex');
+    $('#menu_'+focusElem+' .confirmCancel .cancel').css('display', 'flex');
 
-    $('#menu_'+Vent._focus+' .confirmCancel').css('display', 'none');
-    $('#menu_'+Vent._focus+' .confirmCancel').css('top', '-86px');
+    $('#menu_'+focusElem+' .confirmCancel').css('display', 'none');
+    $('#menu_'+focusElem+' .confirmCancel').css('top', '-86px');
 
-    $('#menu_'+Vent._focus).removeClass('ccConfirmBorder');
-    $('#menu_'+Vent._focus).removeClass('ccCancelBorder');
+    $('#menu_'+focusElem).removeClass('ccConfirmBorder');
+    $('#menu_'+focusElem).removeClass('ccCancelBorder');
     $('.control').removeClass('focused');
 
-    $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccActive');
+    $('#menu_'+focusElem+' .confirmCancel .confirm').addClass('ccActive');
     Vent._confirmSelected = true;
 }
 
-Vent.submitCCUI = () => {
+Vent.submitCCUI = (isConfirmSelected, focusElem) => {
     // update top px to only show 1 elemement
-    $('#menu_'+Vent._focus+' .confirmCancel').css('top', '-46px');
+    $('#menu_'+focusElem+' .confirmCancel').css('top', '-46px');
 
-    if (Vent._confirmSelected) {
-        $('#menu_'+Vent._focus+' .confirmCancel .cancel').css('display', 'none');
-        $('#menu_'+Vent._focus+' .confirmCancel .confirm').addClass('ccSubmit');
-        $('#menu_'+Vent._focus).addClass('ccConfirmBorder');
+    if (isConfirmSelected) {
+        $('#menu_'+focusElem+' .confirmCancel .cancel').css('display', 'none');
+        $('#menu_'+focusElem+' .confirmCancel .confirm').addClass('ccSubmit');
+        $('#menu_'+focusElem).addClass('ccConfirmBorder');
 
     } else {
-        $('#menu_'+Vent._focus+' .confirmCancel .confirm').css('display', 'none');
-        $('#menu_'+Vent._focus+' .confirmCancel .cancel').addClass('ccSubmit');
-        $('#menu_'+Vent._focus).addClass('ccCancelBorder');
+        $('#menu_'+focusElem+' .confirmCancel .confirm').css('display', 'none');
+        $('#menu_'+focusElem+' .confirmCancel .cancel').addClass('ccSubmit');
+        $('#menu_'+focusElem).addClass('ccCancelBorder');
     }
 
+    Vent.finishCCProgressBar(focusElem);
+
     setTimeout(function() {
-        Vent.updateSettings(Vent._confirmSelected);
+        Vent.updateSettings(isConfirmSelected, focusElem);
     }, 1000);
 }
 
-Vent.updateCCProgressBar = () => {
-    let width = 0;
-    let i = 0;
+Vent.updateCCProgressBar = (field, val) => {
     $('#menu_'+Vent._focus+' .ccProgress').css('display', 'block');
     const elem = document.querySelector(`#menu_${Vent._focus} .ccBar`);
-
-    Vent._ccProgress = setInterval(frame, 30);
-    function frame() {
-        if (width >= 100) {
-            Vent.finishCCProgressBar();
-            Vent.updateSettings(false);
-            Vent._inFocus = false;
-            Vent._isConfirming = false;
-            i = 0;
-        } else {
-            width++;
-            elem.style.width = width + "%";
-        }
-    }
+    // TODO: max value based on field instead of scale 0-10
+    elem.style.width = val*10 + "%";
 }
 
-Vent.finishCCProgressBar = () => {
-    clearInterval(Vent._ccProgress);
-    $('#menu_'+Vent._focus+' .ccProgress').css('display', 'none');
+Vent.finishCCProgressBar = (focusElem) => {
+    $('#menu_'+focusElem+' .ccProgress').css('display', 'none');
+    Vent._inFocus = false;
+    Vent._isConfirming = false;
 }
 
 $(document).ready(function() {

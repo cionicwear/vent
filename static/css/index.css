@@ -16,7 +16,7 @@ html {
 .body {
     display:grid;
     grid-template-columns: 16.6% 16.6% 16.6% 16.6% 16.6% 16.6%;
-    grid-template-rows: 8% 25% 12.5% 12.5% 25% 17%;
+    grid-template-rows: 11% 25% 12.5% 12.5% 25% 14%;
     width: 100vw;
     height: 100vh;
 }   
