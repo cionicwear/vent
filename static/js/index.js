@@ -229,6 +229,14 @@ Vent.listen = function() {
                     Vent.resetCCUI(menuItem);
                     $(".elipseContainer img").attr("src","./../static/img/elipse.svg");
                     $(".elipseContainer .activeElipse").attr("src","./../static/img/active_elipse.svg");
+
+                    // update choices in UI
+                    const inputs = Vent.MODE_TO_INPUTS[Vent._mode];
+                    Vent._choices = ['ALARM', 'MODE', ...inputs];
+                    for (let i = 0; i < 4; i++) {
+                        $(`#menu${i+2}Title`).html(`${inputs[i]}`);
+                        $(`#menu${i+2}Value`).html(`${Vent['settings'][inputs[i]]}`);
+                    }
                     break;
                 }
 
@@ -262,28 +270,6 @@ Vent.listen = function() {
                 console.warn('unknown event');
         }
     });
-};  
-
-Vent.menu = function(choices) {
-    var markup = [];
-    for( var i = 0; i < choices.length; i++) {
-        let val = '';
-        if (typeof Vent[choices[i]] !== 'undefined') val = Vent[choices[i]];
-        console.log(val);
-        markup.push(
-            DIV({
-            'class' : 'control',
-            'id' : 'menu_'+i
-            },
-                DIV({"class":"pinputcell"}, choices[i]) +
-                DIV({'id': choices[i]}, `${val}`)
-            )
-        );
-    }
-    $('#controls').html(markup.join(""));
-    Vent._choices = choices;
-    Vent._focus = 0;
-    Vent.menu_focus();
 };
 
 Vent.menu_focus = function() {
@@ -320,23 +306,6 @@ Vent.menu_scroll = function(dir) {
         Vent._focus = 0;
     }
     Vent.menu_highlight();
-};
-
-Vent.menu_select = function() {
-    // hacky just to show ui
-    switch(Vent._choices[Vent._focus]) {
-        case 'VT':
-        case 'FiO2':
-        case 'PEEP':
-        case 'RR':
-            Vent._inFocus = true
-            break
-        case "VC":
-            return Vent.menu(["VT", "FiO2","PEEP", "RR", "BACK"]);
-        case "BACK":
-        default:
-            return Vent.menu(["VC", "PS", "AC"]);
-    }	
 };
 
 Vent.decrementValue = (focusElem) => {
@@ -406,23 +375,24 @@ Vent.getFieldByFocus = (focusElem) => {
             break;
         case 2:
             // peep
-            field = 'PEEP';
-            id = 'peepValue';
+            field = Vent.MODE_TO_INPUTS[Vent._mode][0];
+            //'PEEP';
+            id = 'menu2Value';
             break;
         case 3: 
             // fio2
-            field = 'FiO2';
-            id = 'fio2Value';
+            field = field = Vent.MODE_TO_INPUTS[Vent._mode][1];
+            id = 'menu3Value';
             break;
         case 4:
             // rr
-            field = 'RR';
-            id = 'rrValue';
+            field = field = Vent.MODE_TO_INPUTS[Vent._mode][2];
+            id = 'menu4Value';
             break;
         case 5: 
             // vt
-            field = 'VT';
-            id = 'vtValue';
+            field = field = Vent.MODE_TO_INPUTS[Vent._mode][3];
+            id = 'menu5Value';
             break;
     }
 
@@ -456,25 +426,6 @@ Vent.setDate = () => {
     let longDate = today.toDateString().split(" ");
     longDate.shift();
     $("#date").html(longDate.join(" "));
-}
-
-Vent.initDataDOM = () => {
-    Vent._peepValue = document.getElementById('peepValue');
-    Vent._peepValue.innerText = `${Vent.settings['PEEP']}`;
-
-    Vent._fio2Value = document.getElementById('fio2Value');
-    Vent._fio2Value.innerText = `${Vent.settings['FiO2']}`;
-
-    Vent._rrValue = document.getElementById('rrValue');
-    Vent._rrValue.innerText = `${Vent.settings['RR']}`;
-
-    Vent._vtValue = document.getElementById('vtValue');
-    Vent._vtValue.innerText = `${Vent.settings['VT']}`;
-    
-    Vent._choices = ['ALARM_SETTINGS', Vent._modeValue, Vent._peepValue, Vent._fio2Value, Vent._rrValue, Vent._vtValue]
-
-    Vent._focus = 1;
-    Vent.menu_highlight();
 }
 
 Vent.getAlarmCSSClassByType = () => {
@@ -598,8 +549,11 @@ $(document).ready(function() {
     });
 
     Vent.listen();
-    // Vent.menu(["VC", "PS", "AC"]);
-    Vent.initDataDOM();
+    
+    Vent._choices = ['ALARM', 'MODE', ...Vent.MODE_TO_INPUTS[Vent._mode]];
+    Vent._focus = 1;
+    Vent.menu_highlight();
+
     Vent.refresh();
     
     Vent.setTime();
