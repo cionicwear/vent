@@ -5,13 +5,13 @@ var MAX_SAMPLES = 500;
 Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0, 'PINSP': 0, 'IE': 0}
 Vent._inFocus = false
 Vent.sensorReadings = {'Ppeak': 0, 'PEEP': 0, 'VT': 0, 'RR': 0, 'FiO2': 0, 'IE': 0}
-Vent.MODES = ['PCV', 'VCV', 'PSV'];
+Vent.MODES = ['VCV', 'PCV', 'PSV'];
 Vent.MODE_TO_INPUTS = {
-    'PCV': ['PINSP', 'RR', 'IE', 'PEEP'],
     'VCV': ['PEEP', 'FiO2', 'RR', 'VT'],
+    'PCV': ['PINSP', 'RR', 'IE', 'PEEP'],
     'PSV': ['FiO2', 'PINSP', 'RR', 'PEEP']
 }
-Vent._mode = 'PCV';
+Vent._mode = 'VCV';
 
 Vent._charts = {};
 Vent._x = {};
@@ -352,10 +352,7 @@ Vent.decrementValue = (focusElem) => {
         $(`#${id}`).text(`${Vent._mode}`);
 
         // change elipses to match current idx
-        $(".elipseContainer .activeElipse").removeClass("activeElipse");
-        $(".elipseContainer img").attr("src","./../static/img/selected_elipse.svg");
-        $(`#elipse${idx-1}`).attr("src","./../static/img/selected_active_elipse.svg");
-        $(`#elipse${idx-1}`).addClass("activeElipse");
+        Vent.updateElipses(idx - 1);
     }
 
     if (Vent['settings'][field] > 0) {
@@ -376,10 +373,7 @@ Vent.incrementValue = (focusElem) => {
         $(`#${id}`).text(`${Vent._mode}`);
 
         // change elipses to match current idx
-        $(".elipseContainer .activeElipse").removeClass("activeElipse");
-        $(".elipseContainer img").attr("src","./../static/img/selected_elipse.svg");
-        $(`#elipse${idx+1}`).attr("src","./../static/img/selected_active_elipse.svg");
-        $(`#elipse${idx+1}`).addClass("activeElipse");
+        Vent.updateElipses(idx + 1);
     }
 
     else if (Vent['settings'][field] < 10) {
@@ -387,6 +381,13 @@ Vent.incrementValue = (focusElem) => {
         $(`#${id}`).text(`${Vent['settings'][field]}`);
         Vent.updateCCProgressBar(field, Vent['settings'][field]);
     }
+}
+
+Vent.updateElipses = (elipseNum) => {
+    $(".elipseContainer .activeElipse").removeClass("activeElipse");
+    $(".elipseContainer img").attr("src","./../static/img/selected_elipse.svg");
+    $(`#elipse${elipseNum}`).attr("src","./../static/img/selected_active_elipse.svg");
+    $(`#elipse${elipseNum}`).addClass("activeElipse");
 }
 
 Vent.getFieldByFocus = (focusElem) => {
@@ -458,7 +459,6 @@ Vent.setDate = () => {
 }
 
 Vent.initDataDOM = () => {
-    // TODO change this so its scroll menu
     Vent._peepValue = document.getElementById('peepValue');
     Vent._peepValue.innerText = `${Vent.settings['PEEP']}`;
 
