@@ -2,10 +2,16 @@ var Vent = Vent || {};
 
 var MAX_SAMPLES = 100;
 
-Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0}
+Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0, 'PINSP': 0, 'IE': 0}
 Vent._inFocus = false
 Vent.sensorReadings = {'Ppeak': 0, 'PEEP': 0, 'VT': 0, 'RR': 0, 'FiO2': 0, 'IE': 0}
-Vent.MODES = ['Mode 1', 'Volume Control', 'Pressure Support'];
+Vent.MODES = ['VCV', 'PCV', 'PSV'];
+Vent.MODE_TO_INPUTS = {
+    'VCV': ['PEEP', 'FiO2', 'RR', 'VT'],
+    'PCV': ['PINSP', 'RR', 'IE', 'PEEP'],
+    'PSV': ['FiO2', 'PINSP', 'RR', 'PEEP']
+}
+Vent._mode = 'VCV';
 
 Vent._charts = {};
 Vent._x = {};
@@ -22,6 +28,10 @@ Vent._last = 0;
 
 Vent._timer = null;
 Vent._requested = 1;
+Vent._isConfirming = false;
+Vent._confirmSelected= true;
+Vent._oldVal = {};
+Vent._ccProgress = null;
 
 Vent.getdata = function() {
     var dataset = []
@@ -185,27 +195,72 @@ Vent.silence = function() {
 Vent.listen = function() {
     document.addEventListener('keydown', function(event) {
         switch(event.code) {
+            case "KeyQ": 
+                Vent.triggerAlarm("high", "peep", "high emergency");
+                break;
+            case "KeyW": 
+                Vent.triggerAlarm("medium", "ppeak", 'med emergency');
+                break;
+            case "KeyE": 
+                Vent.triggerAlarm("low", "vt", 'low emergency');
+                break;
+            case "KeyR": 
+                Vent.silenceAlarm();
+                break;
             case "KeyA":
                 return Vent.silence();
             case "KeyS":
                 return Vent.alarm('boost');
             case "KeyJ":
+                if (Vent._isConfirming) {
+                    Vent.ccScroll(Vent._confirmSelected, Vent._focus);
+                    break;
+                }
                 if (Vent._inFocus) {
-                    Vent.decrementValue();
+                    Vent.decrementValue(Vent._focus);
                     break;
                 }
                 else return Vent.menu_scroll(-1);
             case "KeyK":
-                if (Vent._inFocus) {
-                    Vent.updateSettings();
+                const menuItem = Vent._focus;
+                // handle Modes
+                if (menuItem === 1 && Vent._inFocus) {
                     Vent._inFocus = false;
-                    $('.control').removeClass('focused');
+                    Vent.resetCCUI(menuItem);
+                    $(".elipseContainer img").attr("src","./../static/img/elipse.svg");
+                    $(".elipseContainer .activeElipse").attr("src","./../static/img/active_elipse.svg");
+
+                    // update choices in UI
+                    const inputs = Vent.MODE_TO_INPUTS[Vent._mode];
+                    Vent._choices = ['ALARM', 'MODE', ...inputs];
+                    for (let i = 0; i < 4; i++) {
+                        $(`#menu${i+2}Title`).html(`${inputs[i]}`);
+                        $(`#menu${i+2}Value`).html(`${Vent['settings'][inputs[i]]}`);
+                    }
+                    break;
+                }
+
+                // handle Inputs
+                else if (Vent._isConfirming) {
+                    Vent._inFocus = false;
+                    Vent._isConfirming = false;
+                    Vent.submitCCUI(Vent._confirmSelected, Vent._focus);
+                    break;
+                }
+                else if (Vent._inFocus) {
+                    $('#menu_'+menuItem+' .confirmCancel').css('display', 'flex');
+                    $('#menu_'+menuItem+' .confirmCancel .confirm').addClass('ccActive');
+                    Vent._isConfirming = true;
                     break;
                 }
                 else return Vent.menu_focus();
             case "KeyL":
+                if (Vent._isConfirming) {
+                    Vent.ccScroll(Vent._confirmSelected, Vent._focus);
+                    break;
+                }
                 if (Vent._inFocus) {
-                    Vent.incrementValue();
+                    Vent.incrementValue(Vent._focus);
                     break;
                 }
                 else return Vent.menu_scroll(1);
@@ -215,34 +270,26 @@ Vent.listen = function() {
                 console.warn('unknown event');
         }
     });
-};  
-
-Vent.menu = function(choices) {
-    var markup = [];
-    for( var i = 0; i < choices.length; i++) {
-        let val = '';
-        if (typeof Vent[choices[i]] !== 'undefined') val = Vent[choices[i]];
-        console.log(val);
-        markup.push(
-            DIV({
-            'class' : 'control',
-            'id' : 'menu_'+i
-            },
-                DIV({"class":"pinputcell"}, choices[i]) +
-                DIV({'id': choices[i]}, `${val}`)
-            )
-        );
-    }
-    $('#controls').html(markup.join(""));
-    Vent._choices = choices;
-    Vent._focus = 0;
-    Vent.menu_focus();
 };
 
 Vent.menu_focus = function() {
     $('.control').removeClass('focused');
     $('#menu_'+Vent._focus).addClass('focused');
     Vent._inFocus = true
+
+    // store old value
+    const [field, _] = Vent.getFieldByFocus(Vent._focus);
+    Vent._oldVal[field] = Vent['settings'][field];
+
+    // show progress bar if exists (ie not alarms or mode)
+    if (field != 'MODE' && field != 'ALARM') {
+        Vent.updateCCProgressBar(field, Vent['settings'][field]);
+    }
+    // we're working with modes
+    else if (field === 'MODE') {
+        $(".elipseContainer img").attr("src","./../static/img/selected_elipse.svg");
+        $(".elipseContainer .activeElipse").attr("src","./../static/img/selected_active_elipse.svg");
+    }
 };
 
 Vent.menu_highlight = function() {
@@ -261,81 +308,117 @@ Vent.menu_scroll = function(dir) {
     Vent.menu_highlight();
 };
 
-Vent.menu_select = function() {
-    // hacky just to show ui
-    switch(Vent._choices[Vent._focus]) {
-        case 'VT':
-        case 'FiO2':
-        case 'PEEP':
-        case 'RR':
-            Vent._inFocus = true
-            break
-        case "VC":
-            return Vent.menu(["VT", "FiO2","PEEP", "RR", "BACK"]);
-        case "BACK":
-        default:
-            return Vent.menu(["VC", "PS", "AC"]);
-    }	
-};
-
-Vent.decrementValue = () => {
-    const [field, id] = Vent.getFieldByFocus();
+Vent.decrementValue = (focusElem) => {
+    const [field, id] = Vent.getFieldByFocus(focusElem);
     
-    Vent['settings'][field] -= 1;
-    $(`#${id}`).text(`${Vent['settings'][field]}`);
+    // TODO: custom increments based on field type
+    // TODO: custom bounds based on field type
+    if (field === 'MODE') {
+        const idx = Vent.MODES.indexOf(Vent._mode);
+        if (idx === 0) return;
+        
+        Vent._mode = Vent.MODES[idx - 1];
+        $(`#${id}`).text(`${Vent._mode}`);
+
+        // change elipses to match current idx
+        Vent.updateElipses(idx - 1);
+    }
+
+    if (Vent['settings'][field] > 0) {
+        Vent['settings'][field] -= 1;
+        $(`#${id}`).text(`${Vent['settings'][field]}`);
+        Vent.updateCCProgressBar(field, Vent['settings'][field]);
+    }
 }
 
-Vent.incrementValue = () => {
-    const [field, id] = Vent.getFieldByFocus();
+Vent.incrementValue = (focusElem) => {
+    const [field, id] = Vent.getFieldByFocus(focusElem);
+    // TODO: custom increments based on field type
+    // TODO: custom bounds based on field type
+    if (field === 'MODE') {
+        const idx = Vent.MODES.indexOf(Vent._mode);
+        if (idx === Vent.MODES.length - 1) return;
+        Vent._mode = Vent.MODES[idx + 1];
+        $(`#${id}`).text(`${Vent._mode}`);
 
-    Vent['settings'][field] += 1;
-    $(`#${id}`).text(`${Vent['settings'][field]}`);
+        // change elipses to match current idx
+        Vent.updateElipses(idx + 1);
+    }
+
+    else if (Vent['settings'][field] < 10) {
+        Vent['settings'][field] += 1;
+        $(`#${id}`).text(`${Vent['settings'][field]}`);
+        Vent.updateCCProgressBar(field, Vent['settings'][field]);
+    }
 }
 
-Vent.getFieldByFocus = () => {
+Vent.updateElipses = (elipseNum) => {
+    $(".elipseContainer .activeElipse").removeClass("activeElipse");
+    $(".elipseContainer img").attr("src","./../static/img/selected_elipse.svg");
+    $(`#elipse${elipseNum}`).attr("src","./../static/img/selected_active_elipse.svg");
+    $(`#elipse${elipseNum}`).addClass("activeElipse");
+}
+
+Vent.getFieldByFocus = (focusElem) => {
     let field, id;
 
-    // TODO: custom increments based on field type
-    switch(Vent._focus){
+    // TODO: change cases based on active mode
+    switch(focusElem){
         case 0: 
+            // alarm settings
+            field = 'ALARM';
+            break;
+        case 1: 
             // switch mode
+            field = 'MODE';
+            id = 'modeValue'
             break;
-        case 1:
+        case 2:
             // peep
-            field = 'PEEP';
-            id = 'peepValue';
+            field = Vent.MODE_TO_INPUTS[Vent._mode][0];
+            //'PEEP';
+            id = 'menu2Value';
             break;
-        case 2: 
+        case 3: 
             // fio2
-            field = 'FiO2';
-            id = 'fio2Value';
+            field = field = Vent.MODE_TO_INPUTS[Vent._mode][1];
+            id = 'menu3Value';
             break;
-        case 3:
+        case 4:
             // rr
-            field = 'RR';
-            id = 'rrValue';
+            field = field = Vent.MODE_TO_INPUTS[Vent._mode][2];
+            id = 'menu4Value';
             break;
-        case 4: 
+        case 5: 
             // vt
-            field = 'VT';
-            id = 'vtValue';
+            field = field = Vent.MODE_TO_INPUTS[Vent._mode][3];
+            id = 'menu5Value';
             break;
     }
 
     return [field, id];
 }
 
-Vent.updateSettings = () => {
-    const [field, _] = Vent.getFieldByFocus();
-    const data = { [field]: Vent['settings'][field] };
-    Vent.asyncReq('POST', '/settings', data);
+Vent.updateSettings = (confirmed, focusElem) => {
+    const [field, id] = Vent.getFieldByFocus(focusElem);
+    if (confirmed) {
+        // update settings
+        const data = { [field]: Vent['settings'][field] };
+        Vent.asyncReq('POST', '/settings', data);
+    } else {
+        // set back to old val + reset UI
+        Vent['settings'][field] = Vent._oldVal[field];
+        Vent._oldVal[field] = null;
+        $(`#${id}`).text(`${Vent['settings'][field]}`);
+    }
+
+    Vent.resetCCUI(focusElem);
 }
 
 Vent.setTime = () => {
     const today = new Date();
-    let ampm = today.toLocaleTimeString().split(" ")[1];
-    let time = today.toLocaleTimeString().split(":");
-    $("#time").html(`${time[0]}:${time[1]} ${ampm}`);
+    let time = today.toTimeString().split(":");
+    $("#time").html(`${time[0]}:${time[1]}`);
 }
 
 Vent.setDate = () => {
@@ -345,26 +428,108 @@ Vent.setDate = () => {
     $("#date").html(longDate.join(" "));
 }
 
-Vent.initDataDOM = () => {
-    // TODO change this so its scroll menu
-    Vent._mode =  document.getElementById('modeValue');
+Vent.getAlarmCSSClassByType = () => {
+    if (Vent._alarmType == 'high') return 'highEmergencyStat';
+    else if (Vent._alarmType == 'medium') return'mediumEmergencyStat';
+    else return 'lowEmergencyStat';
+}
 
-    Vent._peepValue = document.getElementById('peepValue');
-    Vent._peepValue.innerText = `${Vent.settings['PEEP']}`;
+Vent.triggerAlarm = (type, stat, text) => {
+    Vent.silenceAlarm();
+    Vent._alarmType = type;
+    Vent._alarmStat = stat;
 
-    Vent._fio2Value = document.getElementById('fio2Value');
-    Vent._fio2Value.innerText = `${Vent.settings['FiO2']}`;
+    const alarmClass = Vent.getAlarmCSSClassByType;
+    $(`#${stat}`).addClass(alarmClass);
 
-    Vent._rrValue = document.getElementById('rrValue');
-    Vent._rrValue.innerText = `${Vent.settings['RR']}`;
+    if (type === 'high') $(`#controls .alarmSettings`).addClass(alarmClass);
+    $(`#${stat} .stat-value`).addClass('whiteText');
+    $(`#${stat} .stat-value-unit`).addClass('whiteText');
+    $(`#dateAndTime`).addClass('alarm');
+    $('#alarm').css('display', 'inline-flex');
+    $('#alarm').addClass(alarmClass);
+    $('#alarm h2').html(text);
+}
 
-    Vent._vtValue = document.getElementById('vtValue');
-    Vent._vtValue.innerText = `${Vent.settings['VT']}`;
-    
-    Vent._choices = [Vent._modeValue, Vent._peepValue, Vent._fio2Value, Vent._rrValue, Vent._vtValue]
+Vent.silenceAlarm = () => {
+    const alarmClass = Vent.getAlarmCSSClassByType;
 
-    Vent._focus = 0;
-    Vent.menu_highlight();
+    $(`#${Vent._alarmStat}`).removeClass(alarmClass);
+    $(`#controls .alarmSettings`).removeClass(alarmClass);
+    $(`#${Vent._alarmStat} .stat-value`).removeClass('whiteText');
+    $(`#${Vent._alarmStat} .stat-value-unit`).removeClass('whiteText');
+    $(`#dateAndTime`).removeClass('alarm');
+    $('#alarm').css('display', 'none');
+    $(`#alarm`).removeClass(alarmClass);
+
+    Vent._alarmType = null;
+    Vent._alarmStat = null;
+}
+
+Vent.ccScroll = (isConfirmSelected, focusElem) => {
+    if (isConfirmSelected) {
+        $('#menu_'+focusElem+' .confirmCancel .confirm').removeClass('ccActive');
+        $('#menu_'+focusElem+' .confirmCancel .cancel').addClass('ccActive');
+        Vent._confirmSelected = false;
+    } else {
+        $('#menu_'+focusElem+' .confirmCancel .confirm').addClass('ccActive');
+        $('#menu_'+focusElem+' .confirmCancel .cancel').removeClass('ccActive');
+        Vent._confirmSelected = true;
+    }
+}
+
+Vent.resetCCUI = (focusElem) => {
+    $('#menu_'+focusElem+' .confirmCancel .cancel').removeClass('ccActive');
+    $('#menu_'+focusElem+' .confirmCancel .cancel').removeClass('ccSubmit');
+    $('#menu_'+focusElem+' .confirmCancel .confirm').removeClass('ccSubmit');
+
+    $('#menu_'+focusElem+' .confirmCancel .confirm').css('display', 'flex');
+    $('#menu_'+focusElem+' .confirmCancel .cancel').css('display', 'flex');
+
+    $('#menu_'+focusElem+' .confirmCancel').css('display', 'none');
+    $('#menu_'+focusElem+' .confirmCancel').css('top', '-86px');
+
+    $('#menu_'+focusElem).removeClass('ccConfirmBorder');
+    $('#menu_'+focusElem).removeClass('ccCancelBorder');
+    $('.control').removeClass('focused');
+
+    $('#menu_'+focusElem+' .confirmCancel .confirm').addClass('ccActive');
+    Vent._confirmSelected = true;
+}
+
+Vent.submitCCUI = (isConfirmSelected, focusElem) => {
+    // update top px to only show 1 elemement
+    $('#menu_'+focusElem+' .confirmCancel').css('top', '-46px');
+
+    if (isConfirmSelected) {
+        $('#menu_'+focusElem+' .confirmCancel .cancel').css('display', 'none');
+        $('#menu_'+focusElem+' .confirmCancel .confirm').addClass('ccSubmit');
+        $('#menu_'+focusElem).addClass('ccConfirmBorder');
+
+    } else {
+        $('#menu_'+focusElem+' .confirmCancel .confirm').css('display', 'none');
+        $('#menu_'+focusElem+' .confirmCancel .cancel').addClass('ccSubmit');
+        $('#menu_'+focusElem).addClass('ccCancelBorder');
+    }
+
+    Vent.finishCCProgressBar(focusElem);
+
+    setTimeout(function() {
+        Vent.updateSettings(isConfirmSelected, focusElem);
+    }, 1000);
+}
+
+Vent.updateCCProgressBar = (field, val) => {
+    $('#menu_'+Vent._focus+' .ccProgress').css('display', 'block');
+    const elem = document.querySelector(`#menu_${Vent._focus} .ccBar`);
+    // TODO: max value based on field instead of scale 0-10
+    elem.style.width = val*10 + "%";
+}
+
+Vent.finishCCProgressBar = (focusElem) => {
+    $('#menu_'+focusElem+' .ccProgress').css('display', 'none');
+    Vent._inFocus = false;
+    Vent._isConfirming = false;
 }
 
 $(document).ready(function() {
@@ -384,8 +549,11 @@ $(document).ready(function() {
     });
 
     Vent.listen();
-    // Vent.menu(["VC", "PS", "AC"]);
-    Vent.initDataDOM();
+    
+    Vent._choices = ['ALARM', 'MODE', ...Vent.MODE_TO_INPUTS[Vent._mode]];
+    Vent._focus = 1;
+    Vent.menu_highlight();
+
     Vent.refresh();
     
     Vent.setTime();
