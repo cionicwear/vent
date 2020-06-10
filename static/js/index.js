@@ -1,6 +1,6 @@
 var Vent = Vent || {};
 
-var MAX_SAMPLES = 500;
+var MAX_SAMPLES = 100;
 
 Vent.settings = {'VT': 0, 'FiO2': 0, 'PEEP': 0, 'RR': 0, 'PINSP': 0, 'IE': 0}
 Vent._inFocus = false
@@ -22,8 +22,8 @@ Vent._paths = {};
 Vent._lines = {};
 
 Vent._pressure = [];
-Vent._humidity = [];
-Vent._temperature = [];
+Vent._flow = [];
+Vent._volume = [];
 Vent._last = 0;
 
 Vent._timer = null;
@@ -62,7 +62,7 @@ Vent.initChart = function(field) {
 
     // setup margins
     var select = "#"+field
-    var margin = {top: 5, right: 5, bottom: 10, left: 25},
+    var margin = {top: 5, right: 5, bottom: 10, left: 35},
 	width = $(select).innerWidth() - margin.left - margin.right,
 	height = $(select).innerHeight() - margin.top - margin.bottom;
     
@@ -145,20 +145,20 @@ Vent.check = function() {
             for (var i=0; i<response.samples; i++) {
                 if (response.times[i] > Vent._last) {
                     Vent._pressure.push({"x": response.times[i], "y": response.pressure[i]});
-                    Vent._temperature.push({"x": response.times[i], "y": response.temperature[i]});
-                    Vent._humidity.push({"x": response.times[i], "y": response.humidity[i]});
+                    Vent._flow.push({"x": response.times[i], "y": response.flow[i]});
+                    Vent._volume.push({"x": response.times[i], "y": response.volume[i]});
                     Vent._last = response.times[i];
                 }
                 else {
                     console.warn('.');
                 }
             }
+	    Vent.max(Vent._flow, MAX_SAMPLES);
             Vent.max(Vent._pressure, MAX_SAMPLES);
-            Vent.max(Vent._temperature, MAX_SAMPLES);
-            Vent.max(Vent._humidity, MAX_SAMPLES);
+            Vent.max(Vent._volume, MAX_SAMPLES);
+	    Vent.updateData('flow', Vent._flow);
             Vent.updateData('pressure', Vent._pressure);
-            Vent.updateData('temperature', Vent._humidity);
-            Vent.updateData('humidity', Vent._temperature);
+            Vent.updateData('volume', Vent._volume);
     });
 }
 
@@ -534,9 +534,9 @@ Vent.finishCCProgressBar = (focusElem) => {
 
 $(document).ready(function() {
     console.log("Vent online");
+    Vent.initChart('flow');
     Vent.initChart('pressure');
-    Vent.initChart('temperature');
-    Vent.initChart('humidity');
+    Vent.initChart('volume');
 
     $("#refresh").click(Vent.refresh);
     $("#breath").click(function() {
