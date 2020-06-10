@@ -62,17 +62,17 @@ html {
     text-align: center;
 }
 
-#pressure {
+#flow {
     grid-column: 1/3;
     grid-row: 2;
 }
 
-#temperature {
+#pressure {
     grid-column: 1/3;
     grid-row: 3;
 }
 
-#humidity {
+#volume {
     grid-column: 1/3;
     grid-row: 4;
 }
@@ -137,11 +137,11 @@ html {
     stroke-width: 1;
 }
 
-#temperature .line {
+#volume .line {
     stroke: #2ECC91;
 }
 
-#humidity .line {
+#flow .line {
     stroke: #00BFFF;
 }
 

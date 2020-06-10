@@ -1,6 +1,10 @@
+#!/usr/bin/env python3                                                                                                                                       
+
+import time
 import sys
 import signal
 import logging
+import argparse
 from multiprocessing import Process, Queue, Value, Array
 
 try:
@@ -48,9 +52,13 @@ class GlobalState():
     idx = Value('i', 0)
     count = Value('i', 10000)
     times = Array('d', range(10000))
-    tank_pressure = Array('d', range(10000))
-    breath_pressure = Array('d', range(10000))
-    flow = Array('d', range(10000))
+    in_pressure_1 = Array('d', range(count.value))
+    in_pressure_2 = Array('d', range(count.value))
+    in_flow = Array('d', range(count.value))
+    ex_pressure_1 = Array('d', range(count.value))
+    ex_pressure_2 = Array('d', range(count.value))
+    ex_flow = Array('d', range(count.value))
+    flow = Array('d', range(count.value))
     breathing = Value('i', 0)
     rr = Value('i', 0)
     vt = Value('i', 0)
@@ -69,9 +77,9 @@ def sensors():
     values = {
         'samples' : len(times),
         'times' : times,
-        'pressure' : g.tank_pressure[last:curr],
-        'humidity' : g.breath_pressure[last:curr],
-        'temperature' : g.flow[last:curr]
+        'pressure' : g.in_pressure_2[last:curr],
+        'flow' : g.flow[last:curr],
+        'volume' : g.ex_flow[last:curr]
     }
     return jsonify(values)
 
@@ -104,19 +112,46 @@ def breath():
 def hello():
     return render_template('index.html')
 
-
-if __name__ == '__main__':
-
+def main(args):
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
-        g.times,
-        g.tank_pressure,
-        g.breath_pressure,
-        g.flow,
-        g.idx,
-        g.count))
+        g.times, g.flow, g.breathing,
+        g.in_pressure_1, g.in_pressure_2, g.in_flow,
+        g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
+        g.idx, g.count))
     p.start()
 
-    # start app
-    app.run(debug=True, host='0.0.0.0', port=PORT)
+    # wait for sensors to initialize
+    time.sleep(10)
+    
+    # start valve process
+    v = Process(target=valve.valve_loop, args=(
+        g.breathing,
+        args.start,  args.rampup,                 # ramp up
+        args.top,    args.inspire - args.rampup,  # hold top
+        args.pause,  args.rampdn,                 # ramp down
+        args.bottom, args.expire - args.rampdn,   # hold bottom
+        args.count))
+    v.start()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Run vent')
+    # times
+    parser.add_argument('-i', '--inspire', default=1.0, type=float, help='inspire time')
+    parser.add_argument('-e', '--expire',  default=2.0, type=float, help='expire time')
+    parser.add_argument('-u', '--rampup',  default=0.1, type=float, help='ramp up')
+    parser.add_argument('-d', '--rampdn',  default=0.0, type=float, help='ramp dn')
+    # thresholds
+    parser.add_argument('-s', '--start',   default=80,  type=int, help='start')
+    parser.add_argument('-t', '--top',     default=100, type=int, help='top')
+    parser.add_argument('-p', '--pause',   default=0,   type=int, help='hold')
+    parser.add_argument('-b', '--bottom',  default=0,   type=int, help='bottom')
+    # counts
+    parser.add_argument('-c', '--count',  default=30,   type=int, help='number of cycles')
+    # run main loop
+    g_args = parser.parse_args(sys.argv[1:])
+    main(g_args)
+    # start server
+    app.run(debug=False, host='0.0.0.0', port=PORT)
     
