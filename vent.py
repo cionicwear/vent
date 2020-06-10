@@ -149,17 +149,17 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run vent')
     # times
-    parser.add_argument('-i', '--inspire', default=1.0, type=float, help='inspire time')
-    parser.add_argument('-e', '--expire',  default=2.0, type=float, help='expire time')
-    parser.add_argument('-u', '--rampup',  default=0.1, type=float, help='ramp up')
-    parser.add_argument('-d', '--rampdn',  default=0.0, type=float, help='ramp dn')
+    parser.add_argument('-i', '--inspire', default=1.0, type=float, help='seconds of inspiration time')
+    parser.add_argument('-e', '--expire',  default=2.0, type=float, help='seconds of expiration time')
+    parser.add_argument('-u', '--rampup',  default=0.1, type=float, help='seconds to ramp from <start> to <top>')
+    parser.add_argument('-d', '--rampdn',  default=0.0, type=float, help='seconds to ramp from <top> to <pause> ')
     # thresholds
-    parser.add_argument('-s', '--start',   default=80,  type=int, help='start')
-    parser.add_argument('-t', '--top',     default=100, type=int, help='top')
-    parser.add_argument('-p', '--pause',   default=0,   type=int, help='hold')
-    parser.add_argument('-b', '--bottom',  default=0,   type=int, help='bottom')
+    parser.add_argument('-s', '--start',   default=80,  type=int, help='percent open at start of breathing cycle')
+    parser.add_argument('-t', '--top',     default=100, type=int, help='percent open at peak of breathing cycle')
+    parser.add_argument('-p', '--pause',   default=0,   type=int, help='percent open at pause in breathing cycle')
+    parser.add_argument('-b', '--bottom',  default=0,   type=int, help='percent open at end of breathing cycle')
     # counts
-    parser.add_argument('-c', '--count',  default=30,   type=int, help='number of cycles')
+    parser.add_argument('-c', '--count',  default=30,   type=int, help='number of breathing cycles')
     # run main loop
     g_args = parser.parse_args(sys.argv[1:])
     main(g_args)
