@@ -48,6 +48,9 @@ dictConfig({
 from flask import Flask, request, render_template, jsonify
 app = Flask(__name__, static_folder='static')
 
+MODE_VC = 0
+MODE_PC = 1
+
 class GlobalState():
     idx = Value('i', 0)
     count = Value('i', 10000)
@@ -60,6 +63,7 @@ class GlobalState():
     ex_flow = Array('d', range(count.value))
     flow = Array('d', range(count.value))
     breathing = Value('i', 0)
+    mode = Value('i', 0)
     rr = Value('i', 0)
     vt = Value('i', 0)
     fio2 = Value('i', 0)
@@ -113,6 +117,13 @@ def hello():
     return render_template('index.html')
 
 def main(args):
+    # update global state based on params
+    g.rr = 60 / (args.inspire + args.expire)
+    g.mode = MODE_PC if (args.rampdn > args.inspire/2) else MODE_VC
+    g.vt = (int)(args.top * 800)
+    g.fio2 = 21
+    print("Starting vent %d:rr %d:mode %d:vt %d:fi02" % (g.rr, g.mode, g.vt, g.fio2))
+    
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
         g.times, g.flow, g.breathing,
@@ -128,9 +139,9 @@ def main(args):
     v = Process(target=valve.valve_loop, args=(
         g.breathing,
         args.start,  args.rampup,                 # ramp up
-        args.top,    args.inspire - args.rampup,  # hold top
+        args.top,    args.inspire - args.rampup - args.rampdn,  # hold top
         args.pause,  args.rampdn,                 # ramp down
-        args.bottom, args.expire - args.rampdn,   # hold bottom
+        args.bottom, args.expire,   # hold bottom
         args.count))
     v.start()
 
