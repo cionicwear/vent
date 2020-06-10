@@ -159,26 +159,6 @@ def sensor_loop(times, flow, breathing,
     fname = datetime.now().strftime("%Y-%m-%d-%H-%M-%S.out")
     f = open(fname, "wb", 0)
 
-    # start the fixed valve process
-    
-    v = Process(target=valve.valve_loop, args=(
-        breathing,
-        82, 0.1,   # ramp up
-        90, 0.9,   # hold top
-        82,  0,     # ramp down
-        82,  2.0,   # hold bottom
-        1200))
-    '''
-    v = Process(target=valve.valve_loop, args=(
-        breathing,
-        80, 0.02,   # ramp up
-        100, 0.02,   # hold top
-        75,  0.96,     # ramp down
-        0,  2.0,   # hold bottom
-        20))
-    '''
-    v.start()
-
     while True:
         pressure_in_1.read()
         pressure_in_2.read()

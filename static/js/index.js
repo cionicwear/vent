@@ -52,7 +52,7 @@ Vent.initChart = function(field) {
 
     // setup margins
     var select = "#"+field
-    var margin = {top: 5, right: 5, bottom: 10, left: 25},
+    var margin = {top: 5, right: 5, bottom: 10, left: 35},
 	width = $(select).innerWidth() - margin.left - margin.right,
 	height = $(select).innerHeight() - margin.top - margin.bottom;
     
