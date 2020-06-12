@@ -58,20 +58,11 @@ def rotary_callback(c):
     if (clk == 1) and (dt == 0) : # A then B ->
         g_counter += 1
         _keystroke(e.KEY_L)
-        # at this point, B may still need to go high, wait for it
-        while dt == 0:
-            dt = GPIO.input(DT_PIN)
-        # now wait for B to drop to end the click cycle
-        while dt == 1:
-            dt = GPIO.input(DT_PIN)
         return
 
     elif (clk == 1) and (dt == 1): # B then A <-
         g_counter -= 1
         _keystroke(e.KEY_J)
-        # A is already high, wait for A to drop to end the click cycle
-        while clk == 1:
-            clk = GPIO.input(CLK_PIN)
         return
 
     else: # discard all other combinations

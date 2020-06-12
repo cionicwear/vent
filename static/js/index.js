@@ -525,7 +525,7 @@ Vent.submitCCUI = (isConfirmSelected, focusElem) => {
 
     setTimeout(function() {
         Vent.updateSettings(isConfirmSelected, focusElem);
-    }, 1000);
+    }, 500);
 }
 
 Vent.updateCCProgressBar = (field, val) => {
