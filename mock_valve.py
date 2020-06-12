@@ -20,3 +20,16 @@ def breath_pwm(breathing, pulse, seconds):
     logging.warning("breathing %d for %ds" % (pulse, seconds))
     time.sleep(seconds)
     breathing.value = 0
+
+def valve_loop(breathing,
+               start, start_time,
+               top, top_time,
+               down, down_time,
+               bottom, bottom_time,
+               count):
+    
+    breathing.value = 1
+    logging.warning("breathing %ds" % (seconds,))
+    time.sleep(top_time)
+    breathing.value = 0
+    time.sleep(bottom_time)
