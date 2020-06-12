@@ -35,7 +35,7 @@ def _keystroke(key):
     ui.syn()
 
 def knob_callback(c):
-    logging.warning(key)
+    logging.warning(c)
     _keystroke(e.KEY_K)
 
 def a_callback(c):
