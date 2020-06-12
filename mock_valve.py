@@ -29,7 +29,7 @@ def valve_loop(breathing,
                count):
     
     breathing.value = 1
-    logging.warning("breathing %ds" % (seconds,))
+    logging.warning("breathing %ds" % (top_time,))
     time.sleep(top_time)
     breathing.value = 0
     time.sleep(bottom_time)
