@@ -138,13 +138,17 @@ Vent.asyncReq = async function(method, url, data = null) {
     }
 };
 
+Vent.setMeasure = function(selector, value) {
+    $(selector).find('.stat-value').html(value);
+};
+
 Vent.check = function() {
     $.get('/sensors?count='+Vent._requested,
         {},
         function(response) {
             for (var i=0; i<response.samples; i++) {
                 if (response.times[i] > Vent._last) {
-                    Vent._pressure.push({"x": response.times[i], "y": response.pressure[i]});
+                    Vent._pressure.push({"x": response.times[i], "y": response.pressure[i] / 98.0665 });
                     Vent._flow.push({"x": response.times[i], "y": response.flow[i]});
                     Vent._volume.push({"x": response.times[i], "y": response.volume[i]});
                     Vent._last = response.times[i];
@@ -153,12 +157,17 @@ Vent.check = function() {
                     console.warn('.');
                 }
             }
+	    var pmin = response.pmin / 98.0665; // conversion from pascal to cmH2O
 	    Vent.max(Vent._flow, MAX_SAMPLES);
             Vent.max(Vent._pressure, MAX_SAMPLES);
             Vent.max(Vent._volume, MAX_SAMPLES);
 	    Vent.updateData('flow', Vent._flow);
             Vent.updateData('pressure', Vent._pressure);
             Vent.updateData('volume', Vent._volume);
+	    Vent.setMeasure('#peep', pmin.toFixed(1));
+	    Vent.setMeasure('#vt', response.tidal.toFixed(0));
+	    Vent.setMeasure('#ieRatio', "1:"+response.ie.toFixed(0));
+	    Vent.setMeasure('#rr', response.rr.toFixed(0));
     });
 }
 

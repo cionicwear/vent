@@ -288,10 +288,10 @@ html {
     text-align: left;
     padding-top: 8px;
     padding-left: 10px;
+    float:left;
 }
 
 .stat-value {
-    height: 52px;
     overflow: visible;
     font-family: "Red Hat Text", serif;
     font-size: 44px;
@@ -300,10 +300,7 @@ html {
     font-weight: 500;
     font-style: normal;
     text-align: right;
-    bottom: 30px;
-    right: 0px;
     margin-right: 10px;
-    position: absolute;
 }
 
 #ppeak .stat-value, #ppeak .stat-value-unit, #peep .stat-value, #peep .stat-value-unit{
@@ -314,7 +311,7 @@ html {
     color: #2ecc91;
 }
 
-#fio2 .value, #rr .value {
+#fio2 .stat-value, #rr .stat-value {
     margin-right: 10px;
     font-family: "Red Hat Text", serif;
     color: #2ecc91;
@@ -324,6 +321,8 @@ html {
     font-weight: 700;
     font-style: normal;
     text-align: right;
+    height: 20px;
+    right: 0px;
 }
 
 #rr .value span {
