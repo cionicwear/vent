@@ -86,7 +86,7 @@ def sensors():
         times = g.times[last:] + g.times[:curr]
         pressures = g.in_pressure_2[last:] + g.in_pressure_2[:curr]
         flows = g.flow[last:] + g.flow[:curr]
-        volumes = g.volume[last:] + g_times[:curr]
+        volumes = g.volume[last:] + g.volume[:curr]
     else:
         times = g.times[last:curr]
         pressures = g.in_pressure_2[last:curr]
