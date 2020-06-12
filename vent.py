@@ -55,16 +55,23 @@ class GlobalState():
     idx = Value('i', 0)
     count = Value('i', 10000)
     times = Array('d', range(10000))
+    # sensor streams
     in_pressure_1 = Array('d', range(count.value))
     in_pressure_2 = Array('d', range(count.value))
     in_flow = Array('d', range(count.value))
     ex_pressure_1 = Array('d', range(count.value))
     ex_pressure_2 = Array('d', range(count.value))
     ex_flow = Array('d', range(count.value))
+    # derived metrics
     flow = Array('d', range(count.value))
+    volume = Array('d', range(count.value))
+    tidal = Array('d', range(count.value))
+    pmin = Array('d', range(count.value))
     breathing = Value('i', 0)
+    # ventilator settings
     mode = Value('i', 0)
     rr = Value('i', 0)
+    ie = Value('d', 0)
     vt = Value('i', 0)
     fio2 = Value('i', 0)
     peep = Value('i', 0)
@@ -76,14 +83,25 @@ def sensors():
     curr = g.idx.value
     last = curr - int(request.args.get('count', '20'))
     if last < 0:
-        last = 0
-    times = g.times[last:curr]
+        times = g.times[last:] + g.times[:curr]
+        pressures = g.in_pressure_2[last:] + g.in_pressure_2[:curr]
+        flows = g.flow[last:] + g.flow[:curr]
+        volumes = g.volume[last:] + g.volume[:curr]
+    else:
+        times = g.times[last:curr]
+        pressures = g.in_pressure_2[last:curr]
+        flows = g.flow[last:curr]
+        volumes = g.volume[last:curr]
     values = {
-        'samples' : len(times),
-        'times' : times,
-        'pressure' : g.in_pressure_2[last:curr],
-        'flow' : g.flow[last:curr],
-        'volume' : g.ex_flow[last:curr]
+        'samples'  : len(times),
+        'times'    : times,
+        'pressure' : pressures,
+        'flow'     : flows,
+        'volume'   : volumes,
+        'tidal'    : g.tidal[curr],
+        'pmin'     : g.pmin[curr],
+        'ie'       : g.ie,
+        'rr'       : g.rr
     }
     return jsonify(values)
 
@@ -119,6 +137,7 @@ def hello():
 def main(args):
     # update global state based on params
     g.rr = 60 / (args.inspire + args.expire)
+    g.ie = args.expire/args.inspire
     g.mode = MODE_PC if (args.rampdn > args.inspire/2) else MODE_VC
     g.vt = (int)(args.top * 800)
     g.fio2 = 21
@@ -126,7 +145,7 @@ def main(args):
     
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
-        g.times, g.flow, g.breathing,
+        g.times, g.flow, g.volume, g.tidal, g.pmin, g.breathing,
         g.in_pressure_1, g.in_pressure_2, g.in_flow,
         g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
         g.idx, g.count))

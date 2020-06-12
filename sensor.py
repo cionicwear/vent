@@ -20,6 +20,7 @@ i2c_in = rpi2c.rpi_i2c(1)
 i2c_ex = rpi2c.rpi_i2c(3)
 
 VCO = 2.40256
+MAXPA = 4000
 
 class FlowSensorADS:
     class Data:
@@ -129,7 +130,7 @@ def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
         pressure_ex_2.read()
 
 
-def sensor_loop(times, flow, breathing,
+def sensor_loop(times, flow, volume, tidal, pmin, breathing,
                 in_pressure_1, in_pressure_2, in_flow,
                 ex_pressure_1, ex_pressure_2, ex_flow,
                 idx, count):
@@ -159,6 +160,16 @@ def sensor_loop(times, flow, breathing,
     fname = datetime.now().strftime("%Y-%m-%d-%H-%M-%S.out")
     f = open(fname, "wb", 0)
 
+    # state management
+    state_breathing = 0        # valve open when breathing = 1
+    state_volume_sum = 0       # accumulator to track volume (inhalation - exhalation)
+    state_sample_sum = 0       # accumulator to track samples
+    state_last_samples = 75    # calculated number of samples in last breath 
+    state_tidal_sum = 0        # accumulator to track tidal volume (exhalation volume)
+    state_last_tidal = 0       # calculated tidal volume of last breath
+    state_pmin_min = MAXPA     # minimum pressure per breath cycle
+    state_last_pmin = 0        # calculated min pressure in last breath cycle
+    
     while True:
         pressure_in_1.read()
         pressure_in_2.read()
@@ -187,16 +198,41 @@ def sensor_loop(times, flow, breathing,
         ex_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
 
         if (breathing.value == 1):
+            # transition from exhale to inhale reset volume state calculations
+            if state_breathing == 0:
+                state_breathing = 1
+                state_volume_sum = 0
+                state_last_tidal = state_tidal_sum
+                state_tidal_sum = 0
+                state_last_samples = state_sample_sum
+                state_sample_sum = 0
+                state_last_pmin = state_pmin_min
+                state_pmin_min = MAXPA
+            # update inhalation metrics
+            state_sample_sum += 1
+            state_volume_sum += in_flow[idx.value]
             flow[idx.value] = in_flow[idx.value]
         else:
+            state_breathing = 0
+            # update exhalation metrics
+            state_sample_sum += 1
+            state_tidal_sum += ex_flow[idx.value]
+            state_volume_sum -= ex_flow[idx.value]
+            state_pmin_min = min(state_pmin_min, ex_pressure_2[idx.value])
             flow[idx.value] = -ex_flow[idx.value]
 
+        volume[idx.value] = state_volume_sum / state_last_samples * 60 # volume changes throughout breathing cycle
+        tidal[idx.value] = state_last_tidal / state_last_samples * 60  # tidal volume counted at end of breathing cycle
+        pmin[idx.value] = state_last_pmin                              # minimum pressure at end of last breathing cycle
+        
         # spontaneous ventilation
         # check_pressure(breath_pressure[idx.value], breathing)
 
-        f.write(bytearray(b"%f %f %f %f %f %f %f %f\n" % (
+        f.write(bytearray(b"%f %f %f %f %f %f %f %f %f %f\n" % (
             times[idx.value],
             flow[idx.value],
+            volume[idx.value],
+            tidal[idx.value],
             in_pressure_1[idx.value],
             in_pressure_2[idx.value],
             in_flow[idx.value],
@@ -213,6 +249,9 @@ if __name__ == '__main__':
 
     breathing = Value('i', 0)
     flow = Array('d', range(count.value))
+    volume = Array('d', range(count.value))
+    tidal = Array('d', range(count.value))
+    pmin = Array('d', range(count.value))
     
     in_pressure_1 = Array('d', range(count.value))
     in_pressure_2 = Array('d', range(count.value))
@@ -222,7 +261,7 @@ if __name__ == '__main__':
     ex_flow = Array('d', range(count.value))
     
     p = Process(target=sensor_loop, args=(
-        times, flow, breathing,
+        times, flow, volume, tidal, pmin, breathing,
         in_pressure_1, in_pressure_2, in_flow,
         ex_pressure_1, ex_pressure_2, ex_flow,
         idx, count))
