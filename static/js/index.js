@@ -158,6 +158,7 @@ Vent.check = function() {
                 }
             }
 	    var pmin = response.pmin / 98.0665; // conversion from pascal to cmH2O
+	    var pmax = response.pmax / 98.0665; // conversion from pascal to cmH2O
 	    Vent.max(Vent._flow, MAX_SAMPLES);
             Vent.max(Vent._pressure, MAX_SAMPLES);
             Vent.max(Vent._volume, MAX_SAMPLES);
@@ -165,9 +166,10 @@ Vent.check = function() {
             Vent.updateData('pressure', Vent._pressure);
             Vent.updateData('volume', Vent._volume);
 	    Vent.setMeasure('#peep', pmin.toFixed(1));
+	    Vent.setMeasure('#ppeak', pmax.toFixed(1));
 	    Vent.setMeasure('#vt', response.tidal.toFixed(0));
-	    Vent.setMeasure('#ieRatio', "1:"+response.ie.toFixed(0));
-	    Vent.setMeasure('#rr', response.rr.toFixed(0));
+	    Vent.setMeasure('#ieRatio', "1:"+response.ie);
+	    Vent.setMeasure('#rr', response.rr);
     });
 }
 

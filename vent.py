@@ -9,17 +9,20 @@ from multiprocessing import Process, Queue, Value, Array
 
 try:
     import valve
-except:
+except Exception as e:
+    logging.warn(e)
     import mock_valve as valve
 
 try:
     import ui
-except:
+except Exception as e:
+    logging.warn(e)
     import mock_ui as ui
 
 try:
     import sensor
-except:
+except Exception as e:
+    logging.warning(e)
     import mock_sensor as sensor
 
     
@@ -48,8 +51,8 @@ dictConfig({
 from flask import Flask, request, render_template, jsonify
 app = Flask(__name__, static_folder='static')
 
-MODE_VC = 0
-MODE_PC = 1
+MODE_VC = 1
+MODE_PC = 2
 
 class GlobalState():
     idx = Value('i', 0)
@@ -67,20 +70,24 @@ class GlobalState():
     volume = Array('d', range(count.value))
     tidal = Array('d', range(count.value))
     pmin = Array('d', range(count.value))
+    pmax = Array('d', range(count.value))
+    expire = Array('d', range(count.value))
     breathing = Value('i', 0)
     # ventilator settings
-    mode = Value('i', 0)
-    rr = Value('i', 0)
-    ie = Value('d', 0)
-    vt = Value('i', 0)
-    fio2 = Value('i', 0)
-    peep = Value('i', 0)
+    mode = MODE_VC
+    inspire = 1
+    rr = 60
+    ie = 0.2
+    vt = 600
+    fio2 = 21
+    peep = 5
     
 g = GlobalState()
 
 @app.route('/sensors')
 def sensors():
     curr = g.idx.value
+    ie = g.ie if g.expire[curr] == 0 else g.expire[curr]/g.inspire
     last = curr - int(request.args.get('count', '20'))
     if last < 0:
         times = g.times[last:] + g.times[:curr]
@@ -92,6 +99,7 @@ def sensors():
         pressures = g.in_pressure_2[last:curr]
         flows = g.flow[last:curr]
         volumes = g.volume[last:curr]
+
     values = {
         'samples'  : len(times),
         'times'    : times,
@@ -100,8 +108,9 @@ def sensors():
         'volume'   : volumes,
         'tidal'    : g.tidal[curr],
         'pmin'     : g.pmin[curr],
-        'ie'       : g.ie,
-        'rr'       : g.rr
+        'pmax'     : g.pmax[curr],
+        'ie'       : (int)(ie),
+        'rr'       : (int)(60.0/ie)
     }
     return jsonify(values)
 
@@ -138,17 +147,19 @@ def main(args):
     # update global state based on params
     g.rr = 60 / (args.inspire + args.expire)
     g.ie = args.expire/args.inspire
+    g.inspire = args.inspire
     g.mode = MODE_PC if (args.rampdn > args.inspire/2) else MODE_VC
     g.vt = (int)(args.top * 800)
     g.fio2 = 21
     print("Starting vent %d:rr %d:mode %d:vt %d:fi02" % (g.rr, g.mode, g.vt, g.fio2))
-    
+
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
-        g.times, g.flow, g.volume, g.tidal, g.pmin, g.breathing,
+        g.times, g.flow, g.volume, g.tidal,
+        g.pmin, g.pmax, g.expire, g.breathing,
         g.in_pressure_1, g.in_pressure_2, g.in_flow,
         g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
-        g.idx, g.count))
+        g.idx, g.count, args.assist))
     p.start()
 
     # wait for sensors to initialize
@@ -167,6 +178,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run vent')
+    # mode
+    parser.add_argument('-a', '--assist', default=0, type=float, help='pressure trigger for assist 0 = no assist')
     # times
     parser.add_argument('-i', '--inspire', default=1.0, type=float, help='seconds of inspiration time')
     parser.add_argument('-e', '--expire',  default=2.0, type=float, help='seconds of expiration time')
