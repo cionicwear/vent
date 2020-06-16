@@ -84,10 +84,20 @@ class GlobalState():
     
 g = GlobalState()
 
+def difference(setting, measured):
+    return abs(setting-measured) / setting
+
 @app.route('/sensors')
 def sensors():
     curr = g.idx.value
+
+    o2 = 21.0 # replace with measured value
     ie = g.ie if g.expire[curr] == 0 else g.expire[curr]/g.inspire
+    rr = 60.0/ie
+    tidal = g.tidal[curr]
+    pmin = g.pmin[curr]
+    pmax = g.pmax[curr]
+    
     last = curr - int(request.args.get('count', '20'))
     if last < 0:
         times = g.times[last:] + g.times[:curr]
@@ -100,17 +110,35 @@ def sensors():
         flows = g.flow[last:curr]
         volumes = g.volume[last:curr]
 
+         
+    alarm_plat = False
+    alarm_power = False
+    alarm_pmax = pmax > 30  # verify hw this should be thresholded
+    alarm_pmin = difference(g.peep, pmin) > 0.2
+    alarm_fio2 = difference(g.fio2, o2) > 0.2
+    alarm_tidal = difference(g.vt, tidal) > 0.2
+    alarm_rate = difference(g.rr, rr) > 0.2
+    
     values = {
         'samples'  : len(times),
         'times'    : times,
         'pressure' : pressures,
         'flow'     : flows,
         'volume'   : volumes,
-        'tidal'    : g.tidal[curr],
-        'pmin'     : g.pmin[curr],
-        'pmax'     : g.pmax[curr],
+        'tidal'    : tidal,
+        'pmin'     : pmin,
+        'pmax'     : pmax,
         'ie'       : (int)(ie),
-        'rr'       : (int)(60.0/ie)
+        'rr'       : (int)(rr),
+        'alarms'   : {
+            'ppeak'  : alarm_pmax,
+            'peep'  : alarm_pmin,
+            'plat'  : alarm_plat,
+            'fio2'  : alarm_fio2,
+            'rate'  : alarm_rate,
+            'vt'    : alarm_tidal,
+            'power' : alarm_power
+        }
     }
     return jsonify(values)
 
@@ -149,7 +177,7 @@ def main(args):
     g.ie = args.expire/args.inspire
     g.inspire = args.inspire
     g.mode = MODE_PC if (args.rampdn > args.inspire/2) else MODE_VC
-    g.vt = (int)(args.top * 800)
+    g.vt = (int)(args.top * 6)
     g.fio2 = 21
     print("Starting vent %d:rr %d:mode %d:vt %d:fi02" % (g.rr, g.mode, g.vt, g.fio2))
 

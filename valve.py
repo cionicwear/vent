@@ -80,7 +80,7 @@ def valve_loop(breathing,
     mixer = Mixer(kit.motor3, kit.motor4)
     mixer.mix(100,0)
     
-    breather = Breather(kit.motor1)
+    breather = Breather(kit.motor2)
     breather.set_cycle(
         start, start_time,
         top, top_time,

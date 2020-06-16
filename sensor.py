@@ -90,15 +90,15 @@ def sensor_loop(times, flow, volume, tidal,
         # inspiration
         p1 = pressure_in_1.data.pressure
         p2 = pressure_in_2.data.pressure
-        in_pressure_1[idx.value] = p1
-        in_pressure_2[idx.value] = p2
+        in_pressure_1[idx.value] = p1 / 98.0665 # convert from Pa to cmH2O
+        in_pressure_2[idx.value] = p2 / 98.0665 # convert from Pa to cmH2O
         in_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
         
         # expiration
         p1 = pressure_ex_1.data.pressure
         p2 = pressure_ex_2.data.pressure
-        ex_pressure_1[idx.value] = p1
-        ex_pressure_2[idx.value] = p2
+        ex_pressure_1[idx.value] = p1 / 98.0665 # convert from Pa to cmH2O
+        ex_pressure_2[idx.value] = p2 / 98.0665 # convert from Pa to cmH2O
         ex_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
 
         if (breathing.value == 1):

@@ -148,7 +148,7 @@ Vent.check = function() {
         function(response) {
             for (var i=0; i<response.samples; i++) {
                 if (response.times[i] > Vent._last) {
-                    Vent._pressure.push({"x": response.times[i], "y": response.pressure[i] / 98.0665 });
+                    Vent._pressure.push({"x": response.times[i], "y": response.pressure[i] });
                     Vent._flow.push({"x": response.times[i], "y": response.flow[i]});
                     Vent._volume.push({"x": response.times[i], "y": response.volume[i]});
                     Vent._last = response.times[i];
@@ -157,19 +157,18 @@ Vent.check = function() {
                     console.warn('.');
                 }
             }
-	    var pmin = response.pmin / 98.0665; // conversion from pascal to cmH2O
-	    var pmax = response.pmax / 98.0665; // conversion from pascal to cmH2O
 	    Vent.max(Vent._flow, MAX_SAMPLES);
             Vent.max(Vent._pressure, MAX_SAMPLES);
             Vent.max(Vent._volume, MAX_SAMPLES);
 	    Vent.updateData('flow', Vent._flow);
             Vent.updateData('pressure', Vent._pressure);
             Vent.updateData('volume', Vent._volume);
-	    Vent.setMeasure('#peep', pmin.toFixed(1));
-	    Vent.setMeasure('#ppeak', pmax.toFixed(1));
+	    Vent.setMeasure('#peep', response.pmin.toFixed(1));
+	    Vent.setMeasure('#ppeak', response.pmax.toFixed(1));
 	    Vent.setMeasure('#vt', response.tidal.toFixed(0));
 	    Vent.setMeasure('#ieRatio', "1:"+response.ie);
 	    Vent.setMeasure('#rr', response.rr);
+	    Vent.processAlarms(response.alarms);
     });
 }
 
@@ -201,6 +200,20 @@ Vent.alarm = function(msg) {
 
 Vent.silence = function() {
     $('#alarms').html("");
+}
+
+Vent.checkAlarm = function(alarms, alarm) {
+    if (alarms[alarm] == true) {
+	Vent.triggerAlarm("high", alarm, alarm + " alarm");
+    }
+}
+	
+
+Vent.processAlarms = function(alarms) {
+    Vent.silenceAlarm();
+    Vent.checkAlarm(alarms, "peep");
+    Vent.checkAlarm(alarms, "ppeak");
+    Vent.checkAlarm(alarms, "vt");
 }
 
 Vent.listen = function() {
