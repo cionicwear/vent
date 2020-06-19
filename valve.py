@@ -93,9 +93,6 @@ def valve_loop(breathing,
     
     i2c = rpi2c.rpi_i2c(1)
     kit = MotorKit(i2c=i2c)
-
-    mixer = Mixer(kit.motor3, kit.motor4)
-    mixer.mix(100,0)
     
     breather = Breather(kit.motor1, kit.motor2)
     breather.set_cycle(
@@ -105,9 +102,7 @@ def valve_loop(breathing,
         bottom)
 
     for i in range(0, count):
-        #mixer.mix(0,0)
         breather.breath(breathing)
-        #mixer.mix(100, 0)
         sleep_time = 0.1
         sleep_count = (int)(bottom_time/sleep_time)
         for i in range(0, sleep_count):
@@ -117,11 +112,7 @@ def valve_loop(breathing,
             
     # cleanup
     logging.warn("cleaning up")
-    mixer.mix(0,0)          # close mixer
-    breather.throttle(80)   # bleed off pressure
-    logging.warn("emptying tank")
-    time.sleep(5)           # wait 5 seconds
-    breather.throttle(0)    # close breather
+    breather.throttle(0)
     logging.warn("closed")
 
 if __name__ == '__main__':
