@@ -13,8 +13,8 @@ SPK_PIN = 9
 
 GPIO.setmode(GPIO.BCM)
 # rotary
-GPIO.setup(CLK_PIN, GPIO.IN)
-GPIO.setup(DT_PIN, GPIO.IN)
+GPIO.setup(CLK_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(DT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 # buttons
 GPIO.setup(SW_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.setup(A_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
