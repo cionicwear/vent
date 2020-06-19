@@ -38,12 +38,11 @@ class Breather:
     def throttle(self, percent):
         self.breath_valve.throttle = percent/100.0
 
-    def peep_cycle(self):
-        # todo: make this a variable that can be sent in from the command line
-        p = Process(target=peep.peep_cycle, args=(360,))
+    def peep_cycle(self, count):
+        p = Process(target=peep.peep_cycle, args=(count,))
         p.start()
         
-    def breath(self, breathing):
+    def breath(self, breathing, peep):
         breathing.value = 1
 
         #self.peep_on()
@@ -57,7 +56,7 @@ class Breather:
         self.throttle(self.top)
         time.sleep(self.top_time)
 
-        self.peep_cycle()
+        self.peep_cycle(peep)
         
         # step down
         for i in range(self.top, self.down, -1):
@@ -82,7 +81,7 @@ def valve_loop(breathing,
                top, top_time,
                down, down_time,
                bottom, bottom_time,
-               count):
+               peep, count):
     
     i2c = rpi2c.rpi_i2c(1)
     kit = MotorKit(i2c=i2c)
@@ -95,7 +94,7 @@ def valve_loop(breathing,
         bottom)
 
     for i in range(0, count):
-        breather.breath(breathing)
+        breather.breath(breathing, peep)
         sleep_time = 0.1
         sleep_count = (int)(bottom_time/sleep_time)
         for i in range(0, sleep_count):
@@ -106,6 +105,7 @@ def valve_loop(breathing,
     # cleanup
     logging.warn("cleaning up")
     breather.throttle(0)
+    breather.peep_cycle(800)
     logging.warn("closed")
 
 if __name__ == '__main__':
@@ -124,7 +124,7 @@ if __name__ == '__main__':
                            0, 0,
                            0)
         for i in range(0, 5):
-            breather.breath(breathing)
+            breather.breath(breathing, 500)
             time.sleep(2.0)
         mixer.mix(0,0)
         breather.throttle(0)

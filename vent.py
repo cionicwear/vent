@@ -196,11 +196,11 @@ def main(args):
     # start valve process
     v = Process(target=valve.valve_loop, args=(
         g.breathing,
-        args.start,  args.rampup,                 # ramp up
-        args.top,    args.inspire - args.rampup - args.rampdn,  # hold top
-        args.pause,  args.rampdn,                 # ramp down
-        args.bottom, args.expire,   # hold bottom
-        args.count))
+        args.start,  args.rampup,
+        args.top,    args.inspire - args.rampup - args.rampdn,
+        args.pause,   args.rampdn,
+        args.bottom, args.expire,
+        args.opens,   args.count))
     v.start()
 
 
@@ -219,7 +219,8 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--pause',   default=0,   type=int, help='percent open at pause in breathing cycle')
     parser.add_argument('-b', '--bottom',  default=0,   type=int, help='percent open at end of breathing cycle')
     # counts
-    parser.add_argument('-c', '--count',  default=30,   type=int, help='number of breathing cycles')
+    parser.add_argument('-c', '--count',   default=30,  type=int, help='number of breathing cycles')
+    parser.add_argument('-o', '--opens',   default=500, type=int, help='number of steps for peep stepper')
     # run main loop
     g_args = parser.parse_args(sys.argv[1:])
     main(g_args)
