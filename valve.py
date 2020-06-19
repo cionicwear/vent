@@ -3,12 +3,10 @@ import time
 import logging
 import board
 import digitalio
-from multiprocessing import Value
+from multiprocessing import Process, Value
 from adafruit_motorkit import MotorKit
 import rpi2c
-
-# peep blocker()
-from gpiozero import AngularServo
+import peep
 
 class Mixer:
     def __init__(self, gas1_motor, gas2_motor):
@@ -23,7 +21,6 @@ class Mixer:
 class Breather:
     def __init__(self, breath_motor, peep_motor):
         self.breath_valve = breath_motor
-        self.peep = AngularServo(21, min_pulse_width=553/1000000, max_pulse_width=2520/1000000)
                 
     def set_cycle(self,
                   start, start_time,
@@ -41,19 +38,15 @@ class Breather:
     def throttle(self, percent):
         self.breath_valve.throttle = percent/100.0
 
-    def peep_on(self):
-        self.peep.angle = -70
-
-    def peep_off(self):
-        #self.peep.angle = self.peep.angle - 20
-        self.peep.angle = 0
-        time.sleep(0.2)
-        # self.peep.detach()
+    def peep_cycle(self):
+        # todo: make this a variable that can be sent in from the command line
+        p = Process(target=peep.peep_cycle, args=(360,))
+        p.start()
         
     def breath(self, breathing):
         breathing.value = 1
 
-        self.peep_on()
+        #self.peep_on()
         
         # step up
         for i in range(self.start, self.top, 1):
@@ -64,7 +57,7 @@ class Breather:
         self.throttle(self.top)
         time.sleep(self.top_time)
 
-        self.peep_off()
+        self.peep_cycle()
         
         # step down
         for i in range(self.top, self.down, -1):
