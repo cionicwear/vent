@@ -1,3 +1,5 @@
+#!/usr/bin/env python3                                                                                                                                       
+
 from RPi import GPIO
 from time import sleep
 from evdev import UInput, ecodes as e
@@ -7,9 +9,9 @@ import time
 CLK_PIN = 22
 DT_PIN = 27
 SW_PIN = 17
-A_PIN = 10
+A_PIN = 9
 B_PIN = 11
-SPK_PIN = 9
+SPK_PIN = 10
 
 GPIO.setmode(GPIO.BCM)
 # rotary
