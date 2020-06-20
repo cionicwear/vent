@@ -29,12 +29,14 @@ class MockSensor:
         self.data.pressure_2 = self.sine_data(self.data.hf, self.data.ha)
         self.data.flow = self.sine_data(self.data.pf, self.data.pa)
         self.data.volume = self.sine_data(self.data.pf * 0.5, self.data.pa * 0.28)
+        self.data.tidal = self.sine_data(self.data.pf * 0.25, self.data.pa * 0.28)
         return True
 
-def sensor_loop(times, flow, volume, tidal, pmin, breathing,
+def sensor_loop(times, flow, volume, tidal,
+                pmin, pmax, expire, breathing,
                 in_pressure_1, in_pressure_2, in_flow,
                 ex_pressure_1, ex_pressure_2, ex_flow,
-                idx, count):   
+                idx, count, assist):
     in_sensor = MockSensor()
     ex_sensor = MockSensor()
     while True:
@@ -57,6 +59,8 @@ def sensor_loop(times, flow, volume, tidal, pmin, breathing,
         ex_flow[idx.value] = ex_sensor.data.flow
 
         volume[idx.value] = in_sensor.data.volume
-        tidal[idx.value] = pmin[idx.value] = 5 
-            
+        tidal[idx.value] = ex_sensor.data.tidal
+        pmin[idx.value] = 500
+        pmax[idx.value] = 1000
+        expire[idx.value] = 2.0
         time.sleep(0.0001)

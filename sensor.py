@@ -6,15 +6,12 @@ import logging
 
 import board
 import busio
-import bme680
-import d6f
 
-import adafruit_lps35hw as LPS
-import adafruit_ads1x15.ads1115 as ADS
-import adafruit_mprls as MPRLS
-from adafruit_ads1x15.analog_in import AnalogIn
 import rpi2c
 import valve
+import constants
+
+from sensor_lps import PressureSensorLPS
 
 i2c_in = rpi2c.rpi_i2c(1)
 i2c_ex = rpi2c.rpi_i2c(3)
@@ -22,104 +19,11 @@ i2c_ex = rpi2c.rpi_i2c(3)
 VCO = 2.40256
 MAXPA = 4000
 
-class FlowSensorADS:
-    class Data:
-        def __init__(self):
-            self.rate = 0
-            
-    def __init__(self, channel=ADS.P0):
-        self.adc = ADS.ADS1115(i2c)
-        self.chan = AnalogIn(self.adc, channel)
-        self.data = self.Data()
-        
-    def read(self):
-        self.data.rate = self.chan.voltage
 
-class PressureSensorBME:
-    class Data:
-        def __init__(self):
-            self.pressure = 0
-            self.temperature = 0
-            self.humidity = 0
-            
-    def __init__(self):
-        try:
-            self.bme = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
-        except IOError:
-            self.bme = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
-        except Exception as e:
-            print(e)
-
-        self.data = self.Data()
-        self.bme.set_humidity_oversample(bme680.OS_1X)
-        self.bme.set_pressure_oversample(bme680.OS_1X)
-        self.bme.set_temperature_oversample(bme680.OS_1X)
-        self.bme.set_filter(bme680.FILTER_SIZE_1)
-        
-        #sensor.set_gas_status(bme680.DISABLE_GAS_MEAS)
-        #sensor.set_gas_heater_temperature(320)
-        #sensor.set_gas_heater_duration(150)
-        #sensor.select_gas_heater_profile(0)
-
-    def read(self):
-        if self.bme.get_sensor_data():
-            self.data.pressure = self.bme.data.pressure
-            self.data.temperature = self.bme.data.temperature
-            self.data.humidity = self.bme.data.humidity
-
-class FlowSensorD6F:
-    class Data:
-        def __init__(self):
-            self.rate = 0
-
-    def __init__(self, i2c):
-        self.flow = d6f.D6F70A(i2c)
-        self.data = self.Data()
-
-    def read(self):
-        self.data.rate = self.flow.read_flow()
-
-class PressureSensorLPS:
-    class Data:
-        def __init__(self):
-            self.pressure = 0
-            self.temperature = 0
-            self.humidity = 0
-
-    def __init__(self, i2c, address=0x5D):
-        self.lps = LPS.LPS35HW(i2c, address=address)
-        self.lps.data_rate = LPS.DataRate.RATE_75_HZ
-        self.data = self.Data()
-
-    def read(self):
-        # pressure reading in hPa convert to Pa
-        self.data.pressure = self.lps.pressure * 100 
-        self.data.temperature = self.lps.temperature
-
-    def zero_pressure(self):
-        self.lps.zero_pressure()
-
-class PressureSensorMPRLS:
-    class Data:
-        def __init__(self):
-            self.pressure = 0
-            self.temperature = 0
-            self.humidity = 0
-
-    def __init__(self, i2c, address=0x5D):
-        self.mprls = MPRLS.MPRLS(i2c)
-        self.data = self.Data()
-
-    def read(self):
-        self.data.pressure = self.mprls.pressure
-
-def check_pressure(pressure, breathing):
-    # on negative pressure start breathing process
-    if pressure < 1000:
-        if breathing.value == 0:
-            breathing.value = 1
-            p = Process(target=valve.breath_relay, args=(breathing,2))
-            p.start()
+def check_spontaneous(pressure, breathing, assist):
+    if pressure < -(assist) and breathing.value == 0:
+        logging.warn("spontaneous breath initiated")
+        breathing.value = 1
 
 def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
     for i in range(0,100):
@@ -130,23 +34,19 @@ def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
         pressure_ex_2.read()
 
 
-def sensor_loop(times, flow, volume, tidal, pmin, breathing,
+def sensor_loop(times, flow, volume, tidal,
+                pmin, pmax, expire, breathing,
                 in_pressure_1, in_pressure_2, in_flow,
                 ex_pressure_1, ex_pressure_2, ex_flow,
-                idx, count):
+                idx, count, assist):
 
-    # make sure valve is off for calibration
-    valve.throttle_i2c(0)
-    time.sleep(5)
-
-    # inspiration 
+    # inspiration
     pressure_in_1 = PressureSensorLPS(i2c_in, address=0x5d)
     pressure_in_2 = PressureSensorLPS(i2c_in, address=0x5c)
+
     # expiration
     pressure_ex_1 = PressureSensorLPS(i2c_ex, address=0x5d)
     pressure_ex_2 = PressureSensorLPS(i2c_ex, address=0x5c)
-
-    dc = 1
 
     # calibration routine
     sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
@@ -169,6 +69,10 @@ def sensor_loop(times, flow, volume, tidal, pmin, breathing,
     state_last_tidal = 0       # calculated tidal volume of last breath
     state_pmin_min = MAXPA     # minimum pressure per breath cycle
     state_last_pmin = 0        # calculated min pressure in last breath cycle
+    state_pmax_max = 0         # maximum pressure per breath cycle
+    state_last_pmax = 0        # calculate max pressure in last breath cycle
+    state_start_expire = 0     # start of last exspire
+    state_last_expire = 0      # calculated expiry time per breath cycle
     
     while True:
         pressure_in_1.read()
@@ -181,24 +85,25 @@ def sensor_loop(times, flow, volume, tidal, pmin, breathing,
             idx.value = 0
 
         # update timestamp
-        times[idx.value] = time.time()
+        ts = time.time()
+        times[idx.value] = ts
         
         # inspiration
         p1 = pressure_in_1.data.pressure
         p2 = pressure_in_2.data.pressure
-        in_pressure_1[idx.value] = p1
-        in_pressure_2[idx.value] = p2
+        in_pressure_1[idx.value] = p1 / 98.0665 # convert from Pa to cmH2O
+        in_pressure_2[idx.value] = p2 / 98.0665 # convert from Pa to cmH2O
         in_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
         
         # expiration
         p1 = pressure_ex_1.data.pressure
         p2 = pressure_ex_2.data.pressure
-        ex_pressure_1[idx.value] = p1
-        ex_pressure_2[idx.value] = p2
+        ex_pressure_1[idx.value] = p1 / 98.0665 # convert from Pa to cmH2O
+        ex_pressure_2[idx.value] = p2 / 98.0665 # convert from Pa to cmH2O
         ex_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
 
-        if (breathing.value == 1):
-            # transition from exhale to inhale reset volume state calculations
+        if (breathing.value == constants.INSPIRING):
+            # transition from expire to inspire reset volume state calculations
             if state_breathing == 0:
                 state_breathing = 1
                 state_volume_sum = 0
@@ -208,25 +113,43 @@ def sensor_loop(times, flow, volume, tidal, pmin, breathing,
                 state_sample_sum = 0
                 state_last_pmin = state_pmin_min
                 state_pmin_min = MAXPA
-            # update inhalation metrics
-            state_sample_sum += 1
+                state_last_pmax = state_pmax_max
+                state_pmax_max = 0
+                if state_start_expire > 0:
+                    state_last_expire = ts - state_start_expire
+                    state_start_expire = 0
+            # update inspiration metrics
             state_volume_sum += in_flow[idx.value]
             flow[idx.value] = in_flow[idx.value]
-        else:
-            state_breathing = 0
-            # update exhalation metrics
-            state_sample_sum += 1
+
+        elif breathing.value == constants.EXPIRING:
+            # transition from inspire to expire capture time
+            if state_breathing == 1:
+                state_breathing = 0
+                state_start_expire = ts
+            # update expiration metrics            
             state_tidal_sum += ex_flow[idx.value]
             state_volume_sum -= ex_flow[idx.value]
-            state_pmin_min = min(state_pmin_min, ex_pressure_2[idx.value])
             flow[idx.value] = -ex_flow[idx.value]
+            
+        else:
+            # valves closed clear flow and volume
+            flow[idx.value] = 0
+            state_volume_sum = 0
 
+        # track min and max pressures
+        state_pmax_max = max(state_pmax_max, ex_pressure_2[idx.value])
+        state_pmin_min = min(state_pmin_min, ex_pressure_2[idx.value])
+
+        state_sample_sum += 1
         volume[idx.value] = state_volume_sum / state_last_samples * 60 # volume changes throughout breathing cycle
-        tidal[idx.value] = state_last_tidal / state_last_samples * 60  # tidal volume counted at end of breathing cycle
+        tidal[idx.value] = state_last_tidal / state_last_samples * 60  # tidal volume counted at end of breathing cycle        
         pmin[idx.value] = state_last_pmin                              # minimum pressure at end of last breathing cycle
-        
-        # spontaneous ventilation
-        # check_pressure(breath_pressure[idx.value], breathing)
+        pmax[idx.value] = state_last_pmax                              # maximum pressure at end of last breathing cycle
+        expire[idx.value] = state_last_expire                          # expiration time of last breath
+
+        if assist > 0:
+            check_spontaneous(in_pressure_2[idx.value], breathing, assist)
 
         f.write(bytearray(b"%f %f %f %f %f %f %f %f %f %f\n" % (
             times[idx.value],
