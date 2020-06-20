@@ -29,7 +29,7 @@ class OxygenADS:
         return self.percent
         
 if __name__ == '__main__':
-    i2c = rpi2c.rpi_i2c(1)
+    i2c = rpi2c.rpi_i2c(3)
     sensor = OxygenADS(i2c)
     sensor.calibrate()
     while True:

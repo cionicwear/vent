@@ -60,7 +60,7 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
     pressure_ex_2 = PressureSensorLPS(i2c_ex, address=0x5c)
 
     # oxygen
-    o2_sensor = oxygen.OxygenADS(i2c_in)
+    o2_sensor = oxygen.OxygenADS(i2c_ex)
     
     # calibration routine
     sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
