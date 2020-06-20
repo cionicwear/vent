@@ -137,8 +137,8 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
                     state_last_expire = ts - state_start_expire
                     state_start_expire = 0
             # update inspiration metrics
-            state_volume_sum += in_flow[idx.value]
-            flow[idx.value] = in_flow[idx.value]
+            state_volume_sum += in_flow[i]
+            flow[i] = in_flow[i]
 
         elif breathing.value == constants.EXPIRING:
             # transition from inspire to expire capture time
@@ -146,25 +146,25 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
                 state_breathing = 0
                 state_start_expire = ts
             # update expiration metrics            
-            state_tidal_sum += ex_flow[idx.value]
-            state_volume_sum -= ex_flow[idx.value]
-            flow[idx.value] = -ex_flow[idx.value]
+            state_tidal_sum += ex_flow[i]
+            state_volume_sum -= ex_flow[i]
+            flow[i] = -ex_flow[i]
             
         else:
             # valves closed clear flow and volume
-            flow[idx.value] = 0
+            flow[i] = 0
             state_volume_sum = 0
 
         # track min and max pressures
-        state_pmax_max = max(state_pmax_max, ex_pressure_2[idx.value])
-        state_pmin_min = min(state_pmin_min, ex_pressure_2[idx.value])
+        state_pmax_max = max(state_pmax_max, ex_pressure_2[i])
+        state_pmin_min = min(state_pmin_min, ex_pressure_2[i])
 
         state_sample_sum += 1
-        volume[idx.value] = state_volume_sum / state_last_samples * 60 # volume changes throughout breathing cycle
-        tidal[idx.value] = state_last_tidal / state_last_samples * 60  # tidal volume counted at end of breathing cycle        
-        pmin[idx.value] = state_last_pmin                              # minimum pressure at end of last breathing cycle
-        pmax[idx.value] = state_last_pmax                              # maximum pressure at end of last breathing cycle
-        expire[idx.value] = state_last_expire                          # expiration time of last breath
+        volume[i] = state_volume_sum / state_last_samples * 60 # volume changes throughout breathing cycle
+        tidal[i] = state_last_tidal / state_last_samples * 60  # tidal volume counted at end of breathing cycle        
+        pmin[i] = state_last_pmin                              # minimum pressure at end of last breathing cycle
+        pmax[i] = state_last_pmax                              # maximum pressure at end of last breathing cycle
+        expire[i] = state_last_expire                          # expiration time of last breath
 
         if assist > 0:
             check_spontaneous(in_pressure_2[i], breathing, assist)
