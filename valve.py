@@ -7,6 +7,7 @@ from multiprocessing import Process, Value
 from adafruit_motorkit import MotorKit
 import rpi2c
 import peep
+import constants
 
 class Mixer:
     def __init__(self, gas1_motor, gas2_motor):
@@ -34,18 +35,27 @@ class Breather:
         self.top = top
         self.down = down
         self.bottom = bottom
+
+    def set_peep(self, peep_steps, peep_wait):
+        self.peep_steps = peep_steps
+        self.peep_wait = peep_wait
         
     def throttle(self, percent):
         self.breath_valve.throttle = percent/100.0
 
-    def peep_cycle(self, count):
-        p = Process(target=peep.peep_cycle, args=(count,))
+    def peep_cycle(self, breathing):
+        p = Process(target=peep.peep_cycle, args=(
+            self.peep_steps, self.peep_wait, breathing))
         p.start()
-        
-    def breath(self, breathing, peep):
-        breathing.value = 1
 
-        #self.peep_on()
+    def cleanup(self, breathing):
+        self.throttle(0)
+        peep.peep_cycle(self.peep_steps, 4.0, breathing)
+
+        
+    def breath(self, breathing):
+        # inspire
+        breathing.value = constants.INSPIRING
         
         # step up
         for i in range(self.start, self.top, 1):
@@ -55,17 +65,18 @@ class Breather:
         # hold top
         self.throttle(self.top)
         time.sleep(self.top_time)
-
-        self.peep_cycle(peep)
         
         # step down
         for i in range(self.top, self.down, -1):
             self.throttle(i)
             time.sleep(self.dn_step)
 
+        # expire
+        breathing.value = constants.EXPIRING
         self.throttle(self.bottom)
-        breathing.value = 0
+        self.peep_cycle(breathing)
 
+        
 def user_int(prompt, default=0):
     print(prompt)
     user = input()
@@ -81,7 +92,8 @@ def valve_loop(breathing,
                top, top_time,
                down, down_time,
                bottom, bottom_time,
-               peep, count):
+               peep_steps, peep_wait,
+               count):
     
     i2c = rpi2c.rpi_i2c(1)
     kit = MotorKit(i2c=i2c)
@@ -92,21 +104,21 @@ def valve_loop(breathing,
         top, top_time,
         down, down_time,
         bottom)
+    breather.set_peep(peep_steps, peep_wait)
 
     for i in range(0, count):
-        breather.breath(breathing, peep)
+        breather.breath(breathing)
         sleep_time = 0.1
         sleep_count = (int)(bottom_time/sleep_time)
         for i in range(0, sleep_count):
-            if breathing.value == 1:
+            if breathing.value == constants.INSPIRING:
                 break
             time.sleep(sleep_time)
             
     # cleanup
-    logging.warn("cleaning up")
-    breather.throttle(0)
-    breather.peep_cycle(800)
-    logging.warn("closed")
+    logging.warn("cleaning up please wait")
+    breather.cleanup(breathing)
+    logging.warn("done")
 
 if __name__ == '__main__':
     breathing = Value('i', 0)
