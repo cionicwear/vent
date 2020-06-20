@@ -166,6 +166,7 @@ Vent.check = function() {
 	    Vent.setMeasure('#peep', response.pmin.toFixed(1));
 	    Vent.setMeasure('#ppeak', response.pmax.toFixed(1));
 	    Vent.setMeasure('#vt', response.tidal.toFixed(0));
+	    Vent.setMeasure('#fio2', response.o2.toFixed(1));
 	    Vent.setMeasure('#ieRatio', "1:"+response.ie);
 	    Vent.setMeasure('#rr', response.rr);
 	    Vent.processAlarms(response.alarms);

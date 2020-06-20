@@ -8,8 +8,19 @@ import board
 import busio
 
 import rpi2c
-import valve
 
+try:
+    import valve
+except:
+    logging.error("valve not found - using mock")
+    import mock_valve as valve
+
+try:
+    import oxygen
+except:
+    logging.error("o2 not found - using mock")
+    
+    
 from sensor_lps import PressureSensorLPS
 
 i2c_in = rpi2c.rpi_i2c(1)
@@ -33,7 +44,7 @@ def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
         pressure_ex_2.read()
 
 
-def sensor_loop(times, flow, volume, tidal,
+def sensor_loop(times, flow, volume, tidal, o2_percent,
                 pmin, pmax, expire, breathing,
                 in_pressure_1, in_pressure_2, in_flow,
                 ex_pressure_1, ex_pressure_2, ex_flow,
@@ -47,6 +58,9 @@ def sensor_loop(times, flow, volume, tidal,
     pressure_ex_1 = PressureSensorLPS(i2c_ex, address=0x5d)
     pressure_ex_2 = PressureSensorLPS(i2c_ex, address=0x5c)
 
+    # oxygen
+    o2_sensor = oxygen.OxygenADS(i2c_in)
+    
     # calibration routine
     sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
     pressure_in_1.zero_pressure()
@@ -54,7 +68,8 @@ def sensor_loop(times, flow, volume, tidal,
     pressure_ex_1.zero_pressure()
     pressure_ex_2.zero_pressure()
     sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
-
+    o2_sensor.calibrate()
+    
     # open outfile
     fname = datetime.now().strftime("%Y-%m-%d-%H-%M-%S.out")
     f = open(fname, "wb", 0)
@@ -79,28 +94,31 @@ def sensor_loop(times, flow, volume, tidal,
         pressure_ex_1.read()
         pressure_ex_2.read()
 
-        idx.value += 1
-        if idx.value >= count.value:
-            idx.value = 0
+        i = idx.value + 1
+        if i >= count.value:
+            i = 0
 
         # update timestamp
         ts = time.time()
-        times[idx.value] = ts
+        times[i] = ts
         
         # inspiration
         p1 = pressure_in_1.data.pressure
         p2 = pressure_in_2.data.pressure
-        in_pressure_1[idx.value] = p1 / 98.0665 # convert from Pa to cmH2O
-        in_pressure_2[idx.value] = p2 / 98.0665 # convert from Pa to cmH2O
-        in_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
+        in_pressure_1[i] = p1 / 98.0665 # convert from Pa to cmH2O
+        in_pressure_2[i] = p2 / 98.0665 # convert from Pa to cmH2O
+        in_flow[i] = VCO * (abs(p2-p1)**0.5)
         
         # expiration
         p1 = pressure_ex_1.data.pressure
         p2 = pressure_ex_2.data.pressure
-        ex_pressure_1[idx.value] = p1 / 98.0665 # convert from Pa to cmH2O
-        ex_pressure_2[idx.value] = p2 / 98.0665 # convert from Pa to cmH2O
-        ex_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
+        ex_pressure_1[i] = p1 / 98.0665 # convert from Pa to cmH2O
+        ex_pressure_2[i] = p2 / 98.0665 # convert from Pa to cmH2O
+        ex_flow[i] = VCO * (abs(p2-p1)**0.5)
 
+        # oxygen
+        o2_percent[i] = o2_sensor.read()
+        
         if (breathing.value == 1):
             # transition from expire to inspire reset volume state calculations
             if state_breathing == 0:
@@ -120,9 +138,9 @@ def sensor_loop(times, flow, volume, tidal,
 
             # update inspiration metrics
             state_sample_sum += 1
-            state_volume_sum += in_flow[idx.value]
-            state_pmax_max = max(state_pmax_max, in_pressure_2[idx.value])
-            flow[idx.value] = in_flow[idx.value]
+            state_volume_sum += in_flow[i]
+            state_pmax_max = max(state_pmax_max, in_pressure_2[i])
+            flow[i] = in_flow[i]
         else:
             # transition from inspire to expire capture time
             if state_breathing == 1:
@@ -130,32 +148,33 @@ def sensor_loop(times, flow, volume, tidal,
                 state_start_expire = ts
             # update expiration metrics
             state_sample_sum += 1
-            state_tidal_sum += ex_flow[idx.value]
-            state_volume_sum -= ex_flow[idx.value]
-            state_pmin_min = min(state_pmin_min, ex_pressure_2[idx.value])
-            flow[idx.value] = -ex_flow[idx.value]
+            state_tidal_sum += ex_flow[i]
+            state_volume_sum -= ex_flow[i]
+            state_pmin_min = min(state_pmin_min, ex_pressure_2[i])
+            flow[i] = -ex_flow[i]
 
-        volume[idx.value] = state_volume_sum / state_last_samples * 60 # volume changes throughout breathing cycle
-        tidal[idx.value] = state_last_tidal / state_last_samples * 60  # tidal volume counted at end of breathing cycle
-        pmin[idx.value] = state_last_pmin                              # minimum pressure at end of last breathing cycle
-        pmax[idx.value] = state_last_pmax                              # maximum pressure at end of last breathing cycle
-        expire[idx.value] = state_last_expire                          # expiration time of last breath
-
+        volume[i] = state_volume_sum / state_last_samples * 60 # volume changes throughout breathing cycle
+        tidal[i] = state_last_tidal / state_last_samples * 60  # tidal volume counted at end of breathing cycle
+        pmin[i] = state_last_pmin                              # minimum pressure at end of last breathing cycle
+        pmax[i] = state_last_pmax                              # maximum pressure at end of last breathing cycle
+        expire[i] = state_last_expire                          # expiration time of last breath
+        
         if assist > 0:
-            check_spontaneous(in_pressure_2[idx.value], breathing, assist)
+            check_spontaneous(in_pressure_2[i], breathing, assist)
 
         f.write(bytearray(b"%f %f %f %f %f %f %f %f %f %f\n" % (
-            times[idx.value],
-            flow[idx.value],
-            volume[idx.value],
-            tidal[idx.value],
-            in_pressure_1[idx.value],
-            in_pressure_2[idx.value],
-            in_flow[idx.value],
-            ex_pressure_1[idx.value],
-            ex_pressure_2[idx.value],
-            ex_flow[idx.value])))
-             
+            times[i],
+            flow[i],
+            volume[i],
+            tidal[i],
+            in_pressure_1[i],
+            in_pressure_2[i],
+            in_flow[i],
+            ex_pressure_1[i],
+            ex_pressure_2[i],
+            ex_flow[i])))
+
+        idx.value = i
         time.sleep(0.005) 
     
 if __name__ == '__main__':

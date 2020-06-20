@@ -65,6 +65,7 @@ class GlobalState():
     ex_pressure_1 = Array('d', range(count.value))
     ex_pressure_2 = Array('d', range(count.value))
     ex_flow = Array('d', range(count.value))
+    o2_percent = Array('d', range(count.value))
     # derived metrics
     flow = Array('d', range(count.value))
     volume = Array('d', range(count.value))
@@ -91,7 +92,7 @@ def difference(setting, measured):
 def sensors():
     curr = g.idx.value
 
-    o2 = 21.0 # replace with measured value
+    o2 = g.o2_percent[curr]
     ie = g.ie if g.expire[curr] == 0 else g.expire[curr]/g.inspire
     rr = 60.0/ie
     tidal = g.tidal[curr]
@@ -128,8 +129,9 @@ def sensors():
         'tidal'    : tidal,
         'pmin'     : pmin,
         'pmax'     : pmax,
-        'ie'       : (int)(ie),
-        'rr'       : (int)(rr),
+        'ie'       : round(ie),
+        'rr'       : round(rr),
+        'o2'       : o2,
         'alarms'   : {
             'ppeak'  : alarm_pmax,
             'peep'  : alarm_pmin,
@@ -183,7 +185,7 @@ def main(args):
 
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
-        g.times, g.flow, g.volume, g.tidal,
+        g.times, g.flow, g.volume, g.tidal, g.o2_percent,
         g.pmin, g.pmax, g.expire, g.breathing,
         g.in_pressure_1, g.in_pressure_2, g.in_flow,
         g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
