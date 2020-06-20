@@ -9,6 +9,7 @@ import busio
 
 import rpi2c
 import valve
+import constants
 
 from sensor_lps import PressureSensorLPS
 
@@ -101,7 +102,7 @@ def sensor_loop(times, flow, volume, tidal,
         ex_pressure_2[idx.value] = p2 / 98.0665 # convert from Pa to cmH2O
         ex_flow[idx.value] = VCO * (abs(p2-p1)**0.5)
 
-        if (breathing.value == 1):
+        if (breathing.value == constants.INSPIRING):
             # transition from expire to inspire reset volume state calculations
             if state_breathing == 0:
                 state_breathing = 1
@@ -117,26 +118,32 @@ def sensor_loop(times, flow, volume, tidal,
                 if state_start_expire > 0:
                     state_last_expire = ts - state_start_expire
                     state_start_expire = 0
-
             # update inspiration metrics
-            state_sample_sum += 1
             state_volume_sum += in_flow[idx.value]
-            state_pmax_max = max(state_pmax_max, in_pressure_2[idx.value])
             flow[idx.value] = in_flow[idx.value]
-        else:
+
+        elif breathing.value == constants.EXPIRING:
             # transition from inspire to expire capture time
             if state_breathing == 1:
                 state_breathing = 0
                 state_start_expire = ts
-            # update expiration metrics
-            state_sample_sum += 1
+            # update expiration metrics            
             state_tidal_sum += ex_flow[idx.value]
             state_volume_sum -= ex_flow[idx.value]
-            state_pmin_min = min(state_pmin_min, ex_pressure_2[idx.value])
             flow[idx.value] = -ex_flow[idx.value]
+            
+        else:
+            # valves closed clear flow and volume
+            flow[idx.value] = 0
+            state_volume_sum = 0
 
+        # track min and max pressures
+        state_pmax_max = max(state_pmax_max, ex_pressure_2[idx.value])
+        state_pmin_min = min(state_pmin_min, ex_pressure_2[idx.value])
+
+        state_sample_sum += 1
         volume[idx.value] = state_volume_sum / state_last_samples * 60 # volume changes throughout breathing cycle
-        tidal[idx.value] = state_last_tidal / state_last_samples * 60  # tidal volume counted at end of breathing cycle
+        tidal[idx.value] = state_last_tidal / state_last_samples * 60  # tidal volume counted at end of breathing cycle        
         pmin[idx.value] = state_last_pmin                              # minimum pressure at end of last breathing cycle
         pmax[idx.value] = state_last_pmax                              # maximum pressure at end of last breathing cycle
         expire[idx.value] = state_last_expire                          # expiration time of last breath
