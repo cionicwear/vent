@@ -213,8 +213,8 @@ Vent.checkAlarm = function(alarms, alarm) {
 Vent.processAlarms = function(alarms) {
     Vent.silenceAlarm();
     Vent.checkAlarm(alarms, "peep");
-    Vent.checkAlarm(alarms, "ppeak");
     Vent.checkAlarm(alarms, "vt");
+    Vent.checkAlarm(alarms, "ppeak");
 }
 
 Vent.listen = function() {

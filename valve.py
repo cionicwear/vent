@@ -32,7 +32,6 @@ class Breather:
         self.dn_step = down_time/(top-down)
         self.top_time = top_time
         self.start = start
-        self.top = top
         self.down = down
         self.bottom = bottom
         
@@ -42,21 +41,22 @@ class Breather:
     def cleanup(self, breathing):
         self.throttle(0)
         
-    def breath(self, breathing):
+    def breath(self, breathing, top):
         # inspire
         breathing.value = constants.INSPIRING
         
         # step up
-        for i in range(self.start, self.top, 1):
+        t = top.value
+        for i in range(self.start, t, 1):
             self.throttle(i)
             time.sleep(self.up_step)
 
         # hold top
-        self.throttle(self.top)
+        self.throttle(t)
         time.sleep(self.top_time)
         
         # step down
-        for i in range(self.top, self.down, -1):
+        for i in range(t, self.down, -1):
             self.throttle(i)
             time.sleep(self.dn_step)
 
@@ -94,13 +94,13 @@ def valve_loop(breathing, peeping,
     breather = Breather(kit.motor1)
     breather.set_cycle(
         start, start_time,
-        top, top_time,
+        top.value, top_time,
         down, down_time,
         bottom)
 
     for i in range(0, count):
         # breath
-        breather.breath(breathing)
+        breather.breath(breathing, top)
         # peep
         peep_cycle(breathing, peeping, peep_steps, peep_step_time, peep_wait)
         # wait
@@ -114,7 +114,7 @@ def valve_loop(breathing, peeping,
     # cleanup
     logging.warn("cleaning up please wait")
     breather.cleanup(breathing)
-    peep_cycle(breathing, peeping, peep_steps, 0.001, 4)
+    peep.peep_cleanup()
     logging.warn("done")
 
 if __name__ == '__main__':

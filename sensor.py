@@ -31,12 +31,12 @@ VCO = 2.40256
 MAXPA = 4000
 
 def check_spontaneous(pressure, breathing, assist):
-    if pressure < -(assist) and breathing.value == 0:
+    if assist.value > 0 and pressure < -(assist.value) and breathing.value == 0:
         logging.warn("spontaneous breath initiated")
         breathing.value = 1
 
 def check_peep(pressure, breathing, peeping, peepx):
-    if breathing.value == constants.EXPIRING and peeping.value != constants.CLOSED and pressure < peepx:
+    if breathing.value == constants.EXPIRING and peeping.value != constants.CLOSED and pressure < peepx.value:
         logging.warning("crosssing peepx on expire")
         peeping.value = constants.CLOSED
 
@@ -172,8 +172,7 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
         pmax[i] = state_last_pmax                              # maximum pressure at end of last breathing cycle
         expire[i] = state_last_expire                          # expiration time of last breath
 
-        if assist > 0:
-            check_spontaneous(in_pressure_2[i], breathing, assist)
+        check_spontaneous(in_pressure_2[i], breathing, assist)
             
         f.write(bytearray(b"%f %f %f %f %f %f %f %f %f %f\n" % (
             times[i],
