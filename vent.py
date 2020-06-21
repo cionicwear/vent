@@ -74,6 +74,7 @@ class GlobalState():
     pmax = Array('d', range(count.value))
     expire = Array('d', range(count.value))
     breathing = Value('i', 0)
+    peeping = Value('i', 0)
     # ventilator settings
     mode = MODE_VC
     inspire = 1
@@ -186,10 +187,10 @@ def main(args):
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
         g.times, g.flow, g.volume, g.tidal, g.o2_percent,
-        g.pmin, g.pmax, g.expire, g.breathing,
+        g.pmin, g.pmax, g.expire, g.breathing, g.peeping,
         g.in_pressure_1, g.in_pressure_2, g.in_flow,
         g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
-        g.idx, g.count, args.assist))
+        g.idx, g.count, args.assist, args.pcross))
     p.start()
 
     # wait for sensors to initialize
@@ -197,12 +198,12 @@ def main(args):
     
     # start valve process
     v = Process(target=valve.valve_loop, args=(
-        g.breathing,
+        g.breathing, g.peeping,
         args.start,  args.rampup,
         args.top,    args.inspire - args.rampup - args.rampdn,
         args.pause,  args.rampdn,
         args.bottom, args.expire,
-        args.openp,  args.waitp,
+        args.popen,  args.pstep, args.pwait,
         args.count))
     v.start()
 
@@ -224,8 +225,10 @@ if __name__ == '__main__':
     # counts
     parser.add_argument('-c', '--count',   default=30,  type=int, help='number of breathing cycles')
     # peep
-    parser.add_argument('-o', '--openp',   default=50,  type=int, help='number of steps for peep stepper')
-    parser.add_argument('-w', '--waitp',   default=1.0, type=float, help='seconds to wait before closing peep')
+    parser.add_argument('-o', '--popen',   default=150,   type=int, help='number of steps for peep stepper')
+    parser.add_argument('-w', '--pwait',   default=1.0,   type=float, help='seconds to wait before closing peep')
+    parser.add_argument('-x', '--pcross',  default=5,     type=float, help='peep crossing threshold')
+    parser.add_argument('-z', '--pstep',   default=0.005, type=float, help='seconds between peep steps default 0.05')
     # run main loop
     g_args = parser.parse_args(sys.argv[1:])
     main(g_args)

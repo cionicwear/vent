@@ -19,8 +19,8 @@ GPIO.setup(CLK_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.setup(DT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 # buttons
 GPIO.setup(SW_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.setup(A_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-GPIO.setup(B_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+#GPIO.setup(A_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+#GPIO.setup(B_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 #speaker
 GPIO.setup(SPK_PIN, GPIO.OUT)
 #ui
@@ -68,9 +68,10 @@ def alarm(seconds):
 
 def ui_loop():
     GPIO.add_event_detect(SW_PIN, GPIO.FALLING, callback=knob_callback, bouncetime=1200)
-    GPIO.add_event_detect(A_PIN, GPIO.FALLING, callback=a_callback, bouncetime=1200)
-    GPIO.add_event_detect(B_PIN, GPIO.FALLING, callback=b_callback, bouncetime=1200)
-    GPIO.add_event_detect(CLK_PIN, GPIO.FALLING, callback=rotary_callback, bouncetime=2)
+    #GPIO.add_event_detect(A_PIN, GPIO.FALLING, callback=a_callback, bouncetime=1200)
+    #GPIO.add_event_detect(B_PIN, GPIO.FALLING, callback=b_callback, bouncetime=1200)
+    GPIO.add_event_detect(CLK_PIN, GPIO.RISING, callback=rotary_callback, bouncetime=2)
+
     logging.warning("UI running press anything to exit")
     
 if __name__ == '__main__':
