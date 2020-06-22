@@ -249,6 +249,12 @@ Vent.listen = function() {
             case "KeyK":
                 const menuItem = Vent._focus;
                 // handle Modes
+                if (menuItem === 0 && Vent._inFocus) {
+                    Vent._inFocus = false;
+                    Vent.resetCCUI(menuItem);
+                    break;
+                }
+
                 if (menuItem === 1 && Vent._inFocus) {
                     Vent._inFocus = false;
                     Vent.resetCCUI(menuItem);
@@ -539,7 +545,7 @@ Vent.submitCCUI = (isConfirmSelected, focusElem) => {
 
     setTimeout(function() {
         Vent.updateSettings(isConfirmSelected, focusElem);
-    }, 1000);
+    }, 500);
 }
 
 Vent.updateCCProgressBar = (field, val) => {

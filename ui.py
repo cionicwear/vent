@@ -37,6 +37,7 @@ def _keystroke(key):
     ui.syn()
 
 def knob_callback(c):
+    logging.warning(c)
     _keystroke(e.KEY_K)
 
 def a_callback(c):
@@ -46,20 +47,39 @@ def b_callback(c):
     _keystroke(e.KEY_S)
 
 def rotary_callback(c):
+    # adopted from Paul Versteeg
+    # https://www.raspberrypi.org/forums/viewtopic.php?t=126753
     global g_counter
     global g_clk
-    
+
+    sleep(0.002) # extra 2 mSec de-bounce time
+
     clk = GPIO.input(CLK_PIN)
     dt = GPIO.input(DT_PIN)
-    if clk != g_clk:
-        g_clk = clk
-        if dt != clk:
-            g_counter += 1
-            _keystroke(e.KEY_L)
-        else:
-            g_counter -= 1
-            _keystroke(e.KEY_J)
-        
+
+    if (clk == 1) and (dt == 0) : # A then B ->
+        g_counter += 1
+        _keystroke(e.KEY_L)
+
+        # at this point, B may still need to go high, wait for it
+        while dt == 0:
+            dt = GPIO.input(DT_PIN)
+        # now wait for B to drop to end the click cycle
+        while dt == 1:
+            dt = GPIO.input(DT_PIN)
+
+        return
+
+    elif (clk == 1) and (dt == 1): # B then A <-
+        g_counter -= 1
+        _keystroke(e.KEY_J)
+        # A is already high, wait for A to drop to end the click cycle
+        while clk == 1:
+            clk = GPIO.input(CLK_PIN)
+        return
+
+    else: # discard all other combinations
+        return
 
 def alarm(seconds):
     GPIO.output(SPK_PIN, 1)
@@ -68,10 +88,9 @@ def alarm(seconds):
 
 def ui_loop():
     GPIO.add_event_detect(SW_PIN, GPIO.FALLING, callback=knob_callback, bouncetime=1200)
-    #GPIO.add_event_detect(A_PIN, GPIO.FALLING, callback=a_callback, bouncetime=1200)
-    #GPIO.add_event_detect(B_PIN, GPIO.FALLING, callback=b_callback, bouncetime=1200)
+    GPIO.add_event_detect(A_PIN, GPIO.FALLING, callback=a_callback, bouncetime=1200)
+    GPIO.add_event_detect(B_PIN, GPIO.FALLING, callback=b_callback, bouncetime=1200)
     GPIO.add_event_detect(CLK_PIN, GPIO.RISING, callback=rotary_callback, bouncetime=2)
-
     logging.warning("UI running press anything to exit")
     
 if __name__ == '__main__':
