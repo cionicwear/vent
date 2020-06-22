@@ -213,8 +213,8 @@ Vent.checkAlarm = function(alarms, alarm) {
 Vent.processAlarms = function(alarms) {
     Vent.silenceAlarm();
     Vent.checkAlarm(alarms, "peep");
-    Vent.checkAlarm(alarms, "ppeak");
     Vent.checkAlarm(alarms, "vt");
+    Vent.checkAlarm(alarms, "ppeak");
 }
 
 Vent.listen = function() {
@@ -339,46 +339,44 @@ Vent.menu_scroll = function(dir) {
     Vent.menu_highlight();
 };
 
-Vent.decrementValue = (focusElem) => {
-    const [field, id] = Vent.getFieldByFocus(focusElem);
-    
-    // TODO: custom increments based on field type
-    // TODO: custom bounds based on field type
-    if (field === 'MODE') {
-        const idx = Vent.MODES.indexOf(Vent._mode);
-        if (idx === 0) return;
-        
-        Vent._mode = Vent.MODES[idx - 1];
-        $(`#${id}`).text(`${Vent._mode}`);
-
-        // change elipses to match current idx
-        Vent.updateElipses(idx - 1);
-    }
-
-    if (Vent['settings'][field] > 0) {
-        Vent['settings'][field] -= 1;
-        $(`#${id}`).text(`${Vent['settings'][field]}`);
-        Vent.updateCCProgressBar(field, Vent['settings'][field]);
-    }
-}
 
 Vent.incrementValue = (focusElem) => {
+    Vent.changeValue(focusElem, 1);
+}
+
+Vent.decrementValue = (focusElem) => {
+    Vent.changeValue(focusElem, -1);
+}
+
+Vent.changeValue = (focusElem, dir) => {
     const [field, id] = Vent.getFieldByFocus(focusElem);
-    // TODO: custom increments based on field type
-    // TODO: custom bounds based on field type
+    console.warn(field);
+    
     if (field === 'MODE') {
-        const idx = Vent.MODES.indexOf(Vent._mode);
-        if (idx === Vent.MODES.length - 1) return;
-        Vent._mode = Vent.MODES[idx + 1];
+        const idx = Vent.MODES.indexOf(Vent._mode) + dir;
+        if (idx < 0 || idx >= Vent.MODES.length) return;
+        Vent._mode = Vent.MODES[idx];
         $(`#${id}`).text(`${Vent._mode}`);
-
         // change elipses to match current idx
-        Vent.updateElipses(idx + 1);
+        Vent.updateElipses(idx);
     }
+    else {
+	var increments = {
+	    'PEEP' : [0, 5, 10, 15, 20],
+	    'PINSP' : [20, 25, 30, 35, 40],
+	    'FiO2' : [20, 40, 60, 80, 100],
+	    'RR'   : [10, 12, 15, 20, 30],
+	    'VT'   : [200, 300, 400, 500, 600]
+	};
+    
+	var idx = Vent['settings'][field] + dir;
+	var vals = increments[field];
+	console.warn(vals);
+    
+	if (idx < 0 || idx >= vals.length) return;
 
-    else if (Vent['settings'][field] < 10) {
-        Vent['settings'][field] += 1;
-        $(`#${id}`).text(`${Vent['settings'][field]}`);
+        Vent['settings'][field] = idx;
+        $(`#${id}`).text(`${vals[Vent['settings'][field]]}`);
         Vent.updateCCProgressBar(field, Vent['settings'][field]);
     }
 }
@@ -554,7 +552,7 @@ Vent.updateCCProgressBar = (field, val) => {
     $('#menu_'+Vent._focus+' .ccProgress').css('display', 'block');
     const elem = document.querySelector(`#menu_${Vent._focus} .ccBar`);
     // TODO: max value based on field instead of scale 0-10
-    elem.style.width = val*10 + "%";
+    elem.style.width = (val+1)*20 + "%";
 }
 
 Vent.finishCCProgressBar = (focusElem) => {

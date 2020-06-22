@@ -30,11 +30,15 @@ i2c_ex = rpi2c.rpi_i2c(3)
 VCO = 2.40256
 MAXPA = 4000
 
-
 def check_spontaneous(pressure, breathing, assist):
-    if pressure < -(assist) and breathing.value == 0:
+    if assist.value > 0 and pressure < -(assist.value) and breathing.value == 0:
         logging.warn("spontaneous breath initiated")
         breathing.value = 1
+
+def check_peep(pressure, breathing, peeping, peepx):
+    if breathing.value == constants.EXPIRING and peeping.value != constants.CLOSED and pressure < peepx.value:
+        logging.warning("crosssing peepx on expire")
+        peeping.value = constants.CLOSED
 
 def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
     for i in range(0,100):
@@ -46,10 +50,10 @@ def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
 
 
 def sensor_loop(times, flow, volume, tidal, o2_percent,
-                pmin, pmax, expire, breathing,
+                pmin, pmax, expire, breathing, peeping,
                 in_pressure_1, in_pressure_2, in_flow,
                 ex_pressure_1, ex_pressure_2, ex_flow,
-                idx, count, assist):
+                idx, count, assist, peepx):
 
     # inspiration
     pressure_in_1 = PressureSensorLPS(i2c_in, address=0x5d)
@@ -60,7 +64,7 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
     pressure_ex_2 = PressureSensorLPS(i2c_ex, address=0x5c)
 
     # oxygen
-    o2_sensor = oxygen.OxygenADS(i2c_ex)
+    o2_sensor = oxygen.OxygenADS(i2c_in)
     
     # calibration routine
     sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
@@ -156,8 +160,10 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
             state_volume_sum = 0
 
         # track min and max pressures
-        state_pmax_max = max(state_pmax_max, ex_pressure_2[i])
-        state_pmin_min = min(state_pmin_min, ex_pressure_2[i])
+        peep_pressure = ex_pressure_2[i]
+        check_peep(peep_pressure, breathing, peeping, peepx)
+        state_pmax_max = max(state_pmax_max, peep_pressure)
+        state_pmin_min = min(state_pmin_min, peep_pressure)
 
         state_sample_sum += 1
         volume[i] = state_volume_sum / state_last_samples * 60 # volume changes throughout breathing cycle
@@ -166,9 +172,8 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
         pmax[i] = state_last_pmax                              # maximum pressure at end of last breathing cycle
         expire[i] = state_last_expire                          # expiration time of last breath
 
-        if assist > 0:
-            check_spontaneous(in_pressure_2[i], breathing, assist)
-
+        check_spontaneous(in_pressure_2[i], breathing, assist)
+            
         f.write(bytearray(b"%f %f %f %f %f %f %f %f %f %f\n" % (
             times[i],
             flow[i],

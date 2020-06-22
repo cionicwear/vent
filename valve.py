@@ -18,9 +18,9 @@ class Mixer:
     def mix(self, gas_1, gas_2):
         self.gas1_valve.throttle = gas_1/100.0
         self.gas2_valve.throttle = gas_2/100.0
-
+        
 class Breather:
-    def __init__(self, breath_motor, peep_motor):
+    def __init__(self, breath_motor):
         self.breath_valve = breath_motor
                 
     def set_cycle(self,
@@ -32,49 +32,37 @@ class Breather:
         self.dn_step = down_time/(top-down)
         self.top_time = top_time
         self.start = start
-        self.top = top
         self.down = down
         self.bottom = bottom
-
-    def set_peep(self, peep_steps, peep_wait):
-        self.peep_steps = peep_steps
-        self.peep_wait = peep_wait
         
     def throttle(self, percent):
         self.breath_valve.throttle = percent/100.0
 
-    def peep_cycle(self, breathing):
-        p = Process(target=peep.peep_cycle, args=(
-            self.peep_steps, self.peep_wait, breathing))
-        p.start()
-
     def cleanup(self, breathing):
         self.throttle(0)
-        peep.peep_cycle(self.peep_steps, 4.0, breathing)
-
         
-    def breath(self, breathing):
+    def breath(self, breathing, top):
         # inspire
         breathing.value = constants.INSPIRING
         
         # step up
-        for i in range(self.start, self.top, 1):
+        t = top.value
+        for i in range(self.start, t, 1):
             self.throttle(i)
             time.sleep(self.up_step)
 
         # hold top
-        self.throttle(self.top)
+        self.throttle(t)
         time.sleep(self.top_time)
         
         # step down
-        for i in range(self.top, self.down, -1):
+        for i in range(t, self.down, -1):
             self.throttle(i)
             time.sleep(self.dn_step)
 
         # expire
         breathing.value = constants.EXPIRING
         self.throttle(self.bottom)
-        self.peep_cycle(breathing)
 
         
 def user_int(prompt, default=0):
@@ -87,27 +75,35 @@ def user_int(prompt, default=0):
         print(e)
         return default
 
-def valve_loop(breathing,
+def peep_cycle(breathing, peeping, peep_steps, peep_step_time, peep_wait):
+    p = Process(target=peep.peep_cycle, args=(
+        breathing, peeping, peep_steps, peep_step_time, peep_wait))
+    p.start()
+
+def valve_loop(breathing, peeping,
                start, start_time,
                top, top_time,
                down, down_time,
                bottom, bottom_time,
-               peep_steps, peep_wait,
+               peep_steps, peep_step_time, peep_wait,
                count):
     
     i2c = rpi2c.rpi_i2c(1)
     kit = MotorKit(i2c=i2c)
     
-    breather = Breather(kit.motor1, kit.motor2)
+    breather = Breather(kit.motor1)
     breather.set_cycle(
         start, start_time,
-        top, top_time,
+        top.value, top_time,
         down, down_time,
         bottom)
-    breather.set_peep(peep_steps, peep_wait)
 
     for i in range(0, count):
-        breather.breath(breathing)
+        # breath
+        breather.breath(breathing, top)
+        # peep
+        peep_cycle(breathing, peeping, peep_steps, peep_step_time, peep_wait)
+        # wait
         sleep_time = 0.1
         sleep_count = (int)(bottom_time/sleep_time)
         for i in range(0, sleep_count):
@@ -118,6 +114,7 @@ def valve_loop(breathing,
     # cleanup
     logging.warn("cleaning up please wait")
     breather.cleanup(breathing)
+    peep.peep_cleanup()
     logging.warn("done")
 
 if __name__ == '__main__':

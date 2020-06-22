@@ -74,6 +74,7 @@ class GlobalState():
     pmax = Array('d', range(count.value))
     expire = Array('d', range(count.value))
     breathing = Value('i', 0)
+    peeping = Value('i', 0)
     # ventilator settings
     mode = MODE_VC
     inspire = 1
@@ -82,6 +83,13 @@ class GlobalState():
     vt = 600
     fio2 = 21
     peep = 5
+    # fine grain settings
+    top = Value('i', 0)
+    pwait = Value('d', 0)
+    pstep = Value('i', 0)
+    pcross = Value('d', 0)
+    pstept = Value('d', 0)
+    assist = Value('d', 0)
     
 g = GlobalState()
 
@@ -169,6 +177,26 @@ def breath():
 
     return jsonify({})
 
+@app.route('/tune', methods=['POST'])
+def tune():
+    if 'top' in request.json:
+        g.top.value = request.json['top']
+        logging.warning("setting top to %d" % (g.top.value,))
+
+    if 'pstep' in request.json:
+        g.pstep.value = request.json['pstep']
+        logging.warning("setting peep step to %d" % (g.pstep.value,))
+
+    if 'pstept' in request.json:
+        g.pstept.value = request.json['pstept']
+        logging.warning("setting peep step time to %f" % (g.pstept.value,))
+        
+    if 'pcross' in request.json:
+        g.pcross.value = request.json['pcross']
+        logging.warning("setting peep cross to %f" % (g.pcross.value,))
+    
+    return jsonify({})
+
 @app.route('/')
 def hello():
     return render_template('index.html')
@@ -179,17 +207,28 @@ def main(args):
     g.ie = args.expire/args.inspire
     g.inspire = args.inspire
     g.mode = MODE_PC if (args.rampdn > args.inspire/2) else MODE_VC
-    g.vt = (int)(args.top * 6)
-    g.fio2 = 21
-    print("Starting vent %d:rr %d:mode %d:vt %d:fi02" % (g.rr, g.mode, g.vt, g.fio2))
+    g.vt = args.vtidal
+    g.fio2 = args.fio2
+    g.peep = args.pcross
+    # set fine tuning params
+    g.top.value = args.top
+    g.pwait.value = args.pwait
+    g.pcross.value = args.pcross
+    g.pstep.value = args.pstep
+    g.pstept.value = args.pstept
+    g.assist.value = args.assist
+    
+    print("Starting vent rr:%d vt:%d fi02:%d peep:%d" % (g.rr, g.vt, g.fio2, g.peep))
+    print("Fine grain top:%d pstep:%d pstept:%f assist:%f" % (g.top.value, g.pstep.value, g.pstept.value, g.assist.value))
+    
 
     # start sensor process
     p = Process(target=sensor.sensor_loop, args=(
         g.times, g.flow, g.volume, g.tidal, g.o2_percent,
-        g.pmin, g.pmax, g.expire, g.breathing,
+        g.pmin, g.pmax, g.expire, g.breathing, g.peeping,
         g.in_pressure_1, g.in_pressure_2, g.in_flow,
         g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
-        g.idx, g.count, args.assist))
+        g.idx, g.count, g.assist, g.pcross))
     p.start()
 
     # wait for sensors to initialize
@@ -197,12 +236,12 @@ def main(args):
     
     # start valve process
     v = Process(target=valve.valve_loop, args=(
-        g.breathing,
+        g.breathing, g.peeping,
         args.start,  args.rampup,
-        args.top,    args.inspire - args.rampup - args.rampdn,
+        g.top, (args.inspire - args.rampup - args.rampdn),
         args.pause,  args.rampdn,
         args.bottom, args.expire,
-        args.openp,  args.waitp,
+        g.pstep, g.pstept, g.pwait,
         args.count))
     v.start()
 
@@ -223,9 +262,14 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--bottom',  default=0,   type=int, help='percent open at end of breathing cycle')
     # counts
     parser.add_argument('-c', '--count',   default=30,  type=int, help='number of breathing cycles')
+    # settings
+    parser.add_argument('-f', '--fio2',    default=20,  type=int,  help='fio2')
+    parser.add_argument('-v', '--vtidal',  default=300,  type=int, help='tidal volume')
     # peep
-    parser.add_argument('-o', '--openp',   default=50,  type=int, help='number of steps for peep stepper')
-    parser.add_argument('-w', '--waitp',   default=1.0, type=float, help='seconds to wait before closing peep')
+    parser.add_argument('-w', '--pwait',   default=1.0,   type=float, help='seconds to wait before closing peep')
+    parser.add_argument('-x', '--pcross',  default=5,     type=float, help='peep crossing threshold')
+    parser.add_argument('-y', '--pstep',   default=150,   type=int,   help='number of steps for peep stepper')
+    parser.add_argument('-z', '--pstept',  default=0.005, type=float, help='seconds between peep steps default 0.05')
     # run main loop
     g_args = parser.parse_args(sys.argv[1:])
     main(g_args)
