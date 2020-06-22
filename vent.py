@@ -90,6 +90,7 @@ class GlobalState():
     pcross = Value('d', 0)
     pstept = Value('d', 0)
     assist = Value('d', 0)
+    oxp = Value('i', 0)
     
 g = GlobalState()
 
@@ -194,7 +195,11 @@ def tune():
     if 'pcross' in request.json:
         g.pcross.value = request.json['pcross']
         logging.warning("setting peep cross to %f" % (g.pcross.value,))
-    
+
+    if 'oxp' in request.json:
+        g.oxp.value = request.json['oxp']
+        logging.warning("setting oxp to %d" % (g.oxp.value,))
+
     return jsonify({})
 
 @app.route('/')
@@ -217,6 +222,8 @@ def main(args):
     g.pstep.value = args.pstep
     g.pstept.value = args.pstept
     g.assist.value = args.assist
+
+    g.oxp.value = 0
     
     print("Starting vent rr:%d vt:%d fi02:%d peep:%d" % (g.rr, g.vt, g.fio2, g.peep))
     print("Fine grain top:%d pstep:%d pstept:%f assist:%f" % (g.top.value, g.pstep.value, g.pstept.value, g.assist.value))
@@ -236,7 +243,7 @@ def main(args):
     
     # start valve process
     v = Process(target=valve.valve_loop, args=(
-        g.breathing, g.peeping,
+        g.breathing, g.peeping, g.oxp,
         args.start,  args.rampup,
         g.top, (args.inspire - args.rampup - args.rampdn),
         args.pause,  args.rampdn,

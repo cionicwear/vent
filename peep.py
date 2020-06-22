@@ -124,6 +124,8 @@ if __name__ == '__main__':
                 peep_request("pstep", int(val))
             elif cmd == "z":
                 peep_request("pstept", float(val))
+            elif cmd == "o":
+                peep_request("oxp", int(val))
         except Exception as e:
             print(e)
 

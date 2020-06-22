@@ -25,7 +25,8 @@ class OxygenADS:
         self.calibration = sample_sum / num_samples
 
     def read(self):
-        self.percent = (self.chan.voltage / self.calibration)*20.9
+        # datasheet : https://cdn.shopify.com/s/files/1/1275/4659/files/SS-26.pdf?867825592994555160
+        self.percent = self.chan.voltage * 2000
         return self.percent
         
 if __name__ == '__main__':
