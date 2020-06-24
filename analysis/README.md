@@ -20,6 +20,15 @@ And compared in Jupyter notebooks [vent.ipynb](analysis/vent.ipynb) to generate 
 |   LabChart License                                   |   ADInstruments   |   Used to collect, display, and analyze data.                                   | 300             | 20                | 1                | 30 | 10         |     |
 |   IngMar Medical QuickLung Test Lung or Equivalent   |   MGH/Ximedica    |   Has adjustable resistance and compliance to help simulate a person’s lungs.   | 200             | 20                | 1                | 90 | 5          |     |
 
+### Pressure Control Testing
+
+
+|   | Compliance ml/hPa ±10%                                                       | Resistance  hPa/l/s ±10% | Tidal Volume ml (a) | Breaths / min (b) | Inspire time (s) (c) | O2 | BAP (PEEP) | Δ insp pressure (d) |
+|---|------------------------------------------------------------------------------|--------------------------|---------------------|-------------------|----------------------|----|------------|---------------------|
+| [ISO_PCV1](analysis/ISO_PCV1.pdf) | 50.                                                            | 5                        | 500                 | 20                | 1                    | 30 | 5          | 10                  |
+| [ISO_PCV2](analysis/ISO_PCV2.pdf) | 50                                                                           | 20                       | 500                 | 12                | 1                    | 90 | 10         | 15                  |                                     |
+| ISO_PCV3 | 20                                                                           | 5                        | 500                 | 20                | 1                    | 90 | 5          | 25                  |
+
 
 ### Volume Control Testing
 
@@ -42,11 +51,3 @@ And compared in Jupyter notebooks [vent.ipynb](analysis/vent.ipynb) to generate 
 | [R30](analysis/R30.pdf)  | 50                     | 5                        | 200             | 30                | 1                | 20 | 5          | 1:1 |
 
 
-### Pressure Control Testing
-
-
-|   | Compliance ml/hPa ±10%                                                       | Resistance  hPa/l/s ±10% | Tidal Volume ml (a) | Breaths / min (b) | Inspire time (s) (c) | O2 | BAP (PEEP) | Δ insp pressure (d) |
-|---|------------------------------------------------------------------------------|--------------------------|---------------------|-------------------|----------------------|----|------------|---------------------|
-| [ISO_PCV1](analysis/ISO_PCV1.pdf) | 50.                                                            | 5                        | 500                 | 20                | 1                    | 30 | 5          | 10                  |
-| [ISO_PCV2](analysis/ISO_PCV2.pdf) | 50                                                                           | 20                       | 500                 | 12                | 1                    | 90 | 10         | 15                  |                                     |
-| ISO_PCV3 | 20                                                                           | 5                        | 500                 | 20                | 1                    | 90 | 5          | 25                  |
