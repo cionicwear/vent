@@ -17,13 +17,13 @@ class MockStepper:
     def __init__(self):
         pass
 
-    def step(self, direction, style):
+    def step(self, direction, style, sleep):
         pass
 
-    def extend(self, steps):
+    def extend(self, steps, step_time):
         pass
 
-    def retract(self, steps):
+    def retract(self, steps, step_time):
         pass
 
     def release(self):
@@ -54,8 +54,8 @@ class PeepStepper:
 
 
 try:
-    i2c = rpi2c.rpi_i2c(3)  # stepper driver on i2c 3
-    kit = MotorKit(i2c=i2c, steppers_microsteps=32)
+    i2c = rpi2c.rpi_i2c(1)
+    kit = MotorKit(i2c=i2c, address=0x64, steppers_microsteps=32)
     peeper = PeepStepper(kit.stepper1)
 except:
     peeper = MockStepper()
@@ -84,48 +84,9 @@ def peep_cycle(breathing, peeping, steps, step_time, wait):
     peeping.value = constants.CLOSED
     breathing.value = constants.CLOSED
 
-def peep_help():
-    print("Enter cmd")
-    print("[e] [steps] to extend")
-    print("[r] [steps] to retract")
-    print("[t] [percent] to set top")
-    print("[x] [cross] to set peep crossing")
-    print("[y] [steps] to set peep steps")
-    print("[z] [time] to set peep step time")
-    print("[h] to print this")
+def peep_extend(s, t):
+    peeper.extend(s, t)
 
-def peep_request(setting, value):
-    url = "http://192.168.86.31:3000/tune"
-    r = requests.post(url, json={
-        setting:value
-    })
-    
-if __name__ == '__main__':
-    peep_help()
-    while True:
-        try:
-            user = input()
-            if user == "":
-                break
-            if user == "h":
-                peep_help()
-                continue
-            
-            (cmd, val) = user.split()
-            if cmd == "e":
-                peeper.extend(int(val), 0.001)
-            elif cmd == "r":
-                peeper.retract(int(val), 0.001)
-            elif cmd == "t":
-                peep_request("top", int(val))
-            elif cmd == "x":
-                peep_request("pcross", float(val))
-            elif cmd == "y":
-                peep_request("pstep", int(val))
-            elif cmd == "z":
-                peep_request("pstept", float(val))
-            elif cmd == "o":
-                peep_request("oxp", int(val))
-        except Exception as e:
-            print(e)
+def peep_retract(s, t):
+    peeper.retract(s, t)
 

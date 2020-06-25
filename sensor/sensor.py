@@ -10,22 +10,31 @@ import busio
 import rpi2c
 import constants
 
-try:
-    import valve
-except:
-    logging.error("valve not found - using mock")
-    import mock_valve as valve
-
-try:
-    import oxygen
-except:
-    logging.error("o2 not found - using mock")
+from sensor import oxygen    
     
-    
-from sensor_lps import PressureSensorLPS
+from sensor.sensor_lps import PressureSensorLPS
 
 i2c_in = rpi2c.rpi_i2c(1)
 i2c_ex = rpi2c.rpi_i2c(3)
+
+
+"""
+venturi coefficient - https://www.efunda.com/formulae/fluids/venturi_flowmeter.cfm
+
+60000 * 0.975 * (pi/4) * D2^2 * ( (2 * dP) / (1.204 * (1 - (D2/D1)^4))^0.5
+
+where:
+  60000 is conversion from m^3/s to L/min
+  0.975 is the discharge coefficient 
+         usually lies between 0.90 and 0.98 for smoothly tapering venturis
+  1.204 air density at sea level
+
+assumptions:
+  
+and:
+  D2 = 19.05mm
+  D1 = 6.35mm
+"""
 
 VCO = 2.40256
 MAXPA = 4000
@@ -40,7 +49,7 @@ def check_peep(pressure, breathing, peeping, peepx):
         logging.warning("crosssing peepx on expire")
         peeping.value = constants.CLOSED
 
-def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
+def pressure_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
     for i in range(0,100):
         time.sleep(0.005)
         pressure_in_1.read()
@@ -48,6 +57,13 @@ def sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
         pressure_ex_1.read()
         pressure_ex_2.read()
 
+def pressure_zero(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
+    pressure_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
+    pressure_in_1.zero_pressure()
+    pressure_in_2.zero_pressure()
+    pressure_ex_1.zero_pressure()
+    pressure_ex_2.zero_pressure()
+    pressure_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
 
 def sensor_loop(times, flow, volume, tidal, o2_percent,
                 pmin, pmax, expire, breathing, peeping,
@@ -64,18 +80,17 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
     pressure_ex_2 = PressureSensorLPS(i2c_ex, address=0x5c)
 
     # oxygen
-    o2_sensor = oxygen.OxygenADS(i2c_in)
+    try:
+        o2_sensor = oxygen.OxygenADS(i2c_in)
+    except:
+        logging.error("o2 not found - using mock")
+        o2_sensor = oxygen.MockOxygen(i2c_in)
     
-    # calibration routine
-    sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
-    pressure_in_1.zero_pressure()
-    pressure_in_2.zero_pressure()
-    pressure_ex_1.zero_pressure()
-    pressure_ex_2.zero_pressure()
-    sensor_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
+    # calibrate sensors
+    pressure_zero(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2)
     o2_sensor.calibrate()
     
-    # open outfile
+    # open diagnostics outfile
     fname = datetime.now().strftime("%Y-%m-%d-%H-%M-%S.out")
     f = open(fname, "wb", 0)
 
@@ -173,7 +188,7 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
         expire[i] = state_last_expire                          # expiration time of last breath
 
         check_spontaneous(in_pressure_2[i], breathing, assist)
-            
+
         f.write(bytearray(b"%f %f %f %f %f %f %f %f %f %f\n" % (
             times[i],
             flow[i],

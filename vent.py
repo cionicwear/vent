@@ -8,22 +8,16 @@ import argparse
 from multiprocessing import Process, Queue, Value, Array
 
 try:
-    import valve
+    from actuator import valve
 except Exception as e:
     logging.warn(e)
-    import mock_valve as valve
+    from actuator import mock_valve as valve
 
 try:
-    import ui
-except Exception as e:
-    logging.warn(e)
-    import mock_ui as ui
-
-try:
-    import sensor
+    from sensor import sensor
 except Exception as e:
     logging.warning(e)
-    import mock_sensor as sensor
+    from sensor import mock_sensor as sensor
 
     
 PORT = 3000
@@ -94,8 +88,11 @@ class GlobalState():
     
 g = GlobalState()
 
-def difference(setting, measured):
+def percent_difference(setting, measured):
     return abs(setting-measured) / setting
+
+def absolute_difference(setting, measured):
+    return abs(setting-measured)
 
 @app.route('/sensors')
 def sensors():
@@ -123,11 +120,11 @@ def sensors():
          
     alarm_plat = False
     alarm_power = False
-    alarm_pmax = pmax > 30  # verify hw this should be thresholded
-    alarm_pmin = difference(g.peep, pmin) > 0.2
-    alarm_fio2 = difference(g.fio2, o2) > 0.2
-    alarm_tidal = difference(g.vt, tidal) > 0.2
-    alarm_rate = difference(g.rr, rr) > 0.2
+    alarm_pmax = pmax > 35  # verify hw this should be thresholded
+    alarm_pmin = absolute_difference(g.peep, pmin) > 0.5
+    alarm_fio2 = percent_difference(g.fio2, o2) > 0.2
+    alarm_tidal = percent_difference(g.vt, tidal) > 0.2
+    alarm_rate = percent_difference(g.rr, rr) > 0.2
     
     values = {
         'samples'  : len(times),
@@ -166,7 +163,6 @@ def update_sensors():
 
     if 'FiO2' in request.json:
         g.fio2 = request.json['FiO2']
-
     return jsonify({})
 
 @app.route('/breath', methods=['POST'])

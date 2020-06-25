@@ -7,6 +7,17 @@ from adafruit_ads1x15.analog_in import AnalogIn
 import rpi2c
 import logging
 
+class MockOxygen:
+    def __init__(self, i2c):
+        pass
+
+    def calibrate(self):
+        pass
+
+    def read(self):
+        return 21.0
+    
+
 class OxygenADS:
     def __init__(self, i2c):
         self.i2c = i2c

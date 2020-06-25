@@ -12,6 +12,7 @@ class PressureSensorLPS:
     def __init__(self, i2c, address=0x5D):
         self.lps = LPS.LPS35HW(i2c, address=address)
         self.lps.data_rate = LPS.DataRate.RATE_75_HZ
+        self.lps.low_pass = 1
         self.data = self.Data()
 
     def read(self):

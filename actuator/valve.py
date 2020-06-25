@@ -6,7 +6,7 @@ import digitalio
 from multiprocessing import Process, Value
 from adafruit_motorkit import MotorKit
 import rpi2c
-import peep
+from actuator import peep
 import constants
 
 class Breather:

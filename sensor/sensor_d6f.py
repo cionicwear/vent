@@ -1,6 +1,6 @@
 import board
 import busio
-import d6f
+from sensor import d6f
 
 class FlowSensorD6F:
     class Data:
