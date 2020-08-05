@@ -9,7 +9,7 @@ There have been two revisions to the hardware reference design
 
 The RevB reference design made rapid deployment even easier by leveraging off the shelf breakout boards for almost all components.
 
-[Mechanical Assembly](mechanical/RevB.pdf)
+[Mechanical Assembly](mechanical/RevB.STEP)
 
 [Electrical Schematic](electrical/RevB.pdf)
 
