@@ -13,7 +13,9 @@ The RevB reference design made rapid deployment even easier by leveraging off th
 
 [Electrical Schematic](hardware/electrical/RevB.pdf)
 
-Electrical BOM
+[Bill of Materials](hardware/bom/RevB.csv)
+
+Electronics
 
 - 1x [Raspberry Pi 4](https://www.raspberrypi.org/products/raspberry-pi-4-model-b/) for compute
 - 1x [Raspberry Pi Touch Display](https://www.raspberrypi.org/products/raspberry-pi-touch-display/) for UI
