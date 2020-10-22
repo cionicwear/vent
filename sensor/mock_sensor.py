@@ -29,38 +29,43 @@ class MockSensor:
         self.data.pressure_2 = self.sine_data(self.data.hf, self.data.ha)
         self.data.flow = self.sine_data(self.data.pf, self.data.pa)
         self.data.volume = self.sine_data(self.data.pf * 0.5, self.data.pa * 0.28)
-        self.data.tidal = self.sine_data(self.data.pf * 0.25, self.data.pa * 0.28)
+        self.data.tidal = 488
         return True
 
-def sensor_loop(times, flow, volume, tidal,
-                pmin, pmax, expire, breathing,
+def sensor_loop(times, flow, volume, tidal, o2_percent,
+                pmin, pmax, expire, breathing, peeping,
                 in_pressure_1, in_pressure_2, in_flow,
                 ex_pressure_1, ex_pressure_2, ex_flow,
-                idx, count, assist):
+                idx, count, assist, peepx):
+
     in_sensor = MockSensor()
     ex_sensor = MockSensor()
     while True:
         in_sensor.get_sensor_data()
         ex_sensor.get_sensor_data()
 
-        idx.value += 1
-        if idx.value >= count.value:
-            idx.value = 0
+        i = idx.value + 1
+        if i >= count.value:
+            i = 0
+            
+        times[i] = time.time()
         
-        times[idx.value] = time.time()
-        
-        in_pressure_1[idx.value] = in_sensor.data.pressure_1
-        in_pressure_2[idx.value] = in_sensor.data.pressure_2
-        flow[idx.value] = in_sensor.data.flow
-        in_flow[idx.value] = in_sensor.data.flow
+        in_pressure_1[i] = in_sensor.data.pressure_1
+        in_pressure_2[i] = in_sensor.data.pressure_2
+        flow[i] = in_sensor.data.flow
+        in_flow[i] = in_sensor.data.flow
 
-        ex_pressure_1[idx.value] = ex_sensor.data.pressure_1
-        ex_pressure_2[idx.value] = ex_sensor.data.pressure_2
-        ex_flow[idx.value] = ex_sensor.data.flow
+        ex_pressure_1[i] = ex_sensor.data.pressure_1
+        ex_pressure_2[i] = ex_sensor.data.pressure_2
+        ex_flow[i] = ex_sensor.data.flow
 
-        volume[idx.value] = in_sensor.data.volume
-        tidal[idx.value] = ex_sensor.data.tidal
-        pmin[idx.value] = 500
-        pmax[idx.value] = 1000
-        expire[idx.value] = 2.0
+        volume[i] = in_sensor.data.volume
+        tidal[i] = ex_sensor.data.tidal
+        pmin[i] = 5.0
+        pmax[i] = 14.8
+        expire[i] = 2.0
+        o2_percent[i] = 21.0
+
+        idx.value = i
+
         time.sleep(0.0001)

@@ -23,7 +23,7 @@ class OxygenADS:
         self.i2c = i2c
         
         self.ads = ADS.ADS1015(i2c)
-        self.chan = AnalogIn(self.ads, ADS.P0)
+        self.chan = AnalogIn(self.ads, ADS.P1)
         self.calibration = 0
         self.percent = 0
         
@@ -39,12 +39,5 @@ class OxygenADS:
         # datasheet : https://cdn.shopify.com/s/files/1/1275/4659/files/SS-26.pdf?867825592994555160
         self.percent = self.chan.voltage * 2000
         return self.percent
-        
-if __name__ == '__main__':
-    i2c = rpi2c.rpi_i2c(3)
-    sensor = OxygenADS(i2c)
-    sensor.calibrate()
-    while True:
-        print(sensor.read())
-        time.sleep(0.5)
+
 

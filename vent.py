@@ -1,4 +1,4 @@
-#!/usr/bin/env python3                                                                                                                                       
+#!/usr/bin/env python3
 
 import time
 import sys
@@ -6,6 +6,7 @@ import signal
 import logging
 import argparse
 from multiprocessing import Process, Queue, Value, Array
+from sensor import mock_sensor
 
 try:
     from actuator import valve
@@ -21,7 +22,9 @@ except Exception as e:
 
     
 PORT = 3000
-
+MODE_DEMO = 0
+MODE_VC = 1
+MODE_PC = 2
 
 from logging.config import dictConfig
 
@@ -80,9 +83,7 @@ class GlobalState():
     # fine grain settings
     top = Value('i', 0)
     pwait = Value('d', 0)
-    pstep = Value('i', 0)
     pcross = Value('d', 0)
-    pstept = Value('d', 0)
     assist = Value('d', 0)
     oxp = Value('i', 0)
     
@@ -179,14 +180,6 @@ def tune():
     if 'top' in request.json:
         g.top.value = request.json['top']
         logging.warning("setting top to %d" % (g.top.value,))
-
-    if 'pstep' in request.json:
-        g.pstep.value = request.json['pstep']
-        logging.warning("setting peep step to %d" % (g.pstep.value,))
-
-    if 'pstept' in request.json:
-        g.pstept.value = request.json['pstept']
-        logging.warning("setting peep step time to %f" % (g.pstept.value,))
         
     if 'pcross' in request.json:
         g.pcross.value = request.json['pcross']
@@ -215,43 +208,52 @@ def main(args):
     g.top.value = args.top
     g.pwait.value = args.pwait
     g.pcross.value = args.pcross
-    g.pstep.value = args.pstep
-    g.pstept.value = args.pstept
     g.assist.value = args.assist
 
     g.oxp.value = 0
     
     print("Starting vent rr:%d vt:%d fi02:%d peep:%d" % (g.rr, g.vt, g.fio2, g.peep))
-    print("Fine grain top:%d pstep:%d pstept:%f assist:%f" % (g.top.value, g.pstep.value, g.pstept.value, g.assist.value))
+    print("Fine grain top:%d assist:%f" % (g.top.value, g.assist.value))
     
 
-    # start sensor process
-    p = Process(target=sensor.sensor_loop, args=(
-        g.times, g.flow, g.volume, g.tidal, g.o2_percent,
-        g.pmin, g.pmax, g.expire, g.breathing, g.peeping,
-        g.in_pressure_1, g.in_pressure_2, g.in_flow,
-        g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
-        g.idx, g.count, g.assist, g.pcross))
-    p.start()
+    if args.mode == MODE_DEMO:
+        # start sensor process
+        p = Process(target=mock_sensor.sensor_loop, args=(
+            g.times, g.flow, g.volume, g.tidal, g.o2_percent,
+            g.pmin, g.pmax, g.expire, g.breathing, g.peeping,
+            g.in_pressure_1, g.in_pressure_2, g.in_flow,
+            g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
+            g.idx, g.count, g.assist, g.pcross))
+        p.start()
+    else:
+        # start sensor process
+        p = Process(target=sensor.sensor_loop, args=(
+            g.times, g.flow, g.volume, g.tidal, g.o2_percent,
+            g.pmin, g.pmax, g.expire, g.breathing, g.peeping,
+            g.in_pressure_1, g.in_pressure_2, g.in_flow,
+            g.ex_pressure_1, g.ex_pressure_2, g.ex_flow,
+            g.idx, g.count, g.assist, g.pcross))
+        p.start()
 
-    # wait for sensors to initialize
-    time.sleep(10)
+        # wait for sensors to initialize
+        time.sleep(10)
     
-    # start valve process
-    v = Process(target=valve.valve_loop, args=(
-        g.breathing, g.peeping, g.oxp,
-        args.start,  args.rampup,
-        g.top, (args.inspire - args.rampup - args.rampdn),
-        args.pause,  args.rampdn,
-        args.bottom, args.expire,
-        g.pstep, g.pstept, g.pwait,
-        args.count))
-    v.start()
+        # start valve process
+        v = Process(target=valve.valve_loop, args=(
+            g.breathing, g.peeping, g.oxp,
+            args.start,  args.rampup,
+            g.top, (args.inspire - args.rampup - args.rampdn),
+            args.pause,  args.rampdn,
+            args.bottom, args.expire,
+            g.pwait,
+            args.count))
+        v.start()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run vent')
     # mode
+    parser.add_argument('-m', '--mode', default=MODE_VC, type=int, help='0 = Demo 1 = Volume Control 2 = Pressure Control')
     parser.add_argument('-a', '--assist', default=0, type=float, help='pressure trigger for assist 0 = no assist')
     # times
     parser.add_argument('-i', '--inspire', default=1.0, type=float, help='seconds of inspiration time')
@@ -271,8 +273,6 @@ if __name__ == '__main__':
     # peep
     parser.add_argument('-w', '--pwait',   default=1.0,   type=float, help='seconds to wait before closing peep')
     parser.add_argument('-x', '--pcross',  default=5,     type=float, help='peep crossing threshold')
-    parser.add_argument('-y', '--pstep',   default=150,   type=int,   help='number of steps for peep stepper')
-    parser.add_argument('-z', '--pstept',  default=0.005, type=float, help='seconds between peep steps default 0.05')
     # run main loop
     g_args = parser.parse_args(sys.argv[1:])
     main(g_args)

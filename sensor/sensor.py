@@ -10,7 +10,7 @@ import busio
 import rpi2c
 import constants
 
-from sensor import oxygen    
+from sensor import oxygen
     
 from sensor.sensor_lps import PressureSensorLPS
 
@@ -203,33 +203,5 @@ def sensor_loop(times, flow, volume, tidal, o2_percent,
 
         idx.value = i
         time.sleep(0.005) 
-    
-if __name__ == '__main__':
-    idx = Value('i', 0)
-    count = Value('i', 1000)
-    times = Array('d', range(count.value))
-
-    breathing = Value('i', 0)
-    flow = Array('d', range(count.value))
-    volume = Array('d', range(count.value))
-    tidal = Array('d', range(count.value))
-    pmin = Array('d', range(count.value))
-    
-    in_pressure_1 = Array('d', range(count.value))
-    in_pressure_2 = Array('d', range(count.value))
-    in_flow = Array('d', range(count.value))
-    ex_pressure_1 = Array('d', range(count.value))
-    ex_pressure_2 = Array('d', range(count.value))
-    ex_flow = Array('d', range(count.value))
-    
-    p = Process(target=sensor_loop, args=(
-        times, flow, volume, tidal, pmin, breathing,
-        in_pressure_1, in_pressure_2, in_flow,
-        ex_pressure_1, ex_pressure_2, ex_flow,
-        idx, count))
-
-    p.start()
-    input()
-    p.terminate()
 
 

@@ -26,9 +26,8 @@ g_tune_url = "http://%s:3000/tune" % (g_ip_address,)
 
 def admin_help():
     print("Enter cmd")
-    print("[c] [percent] calibrate flow sensor with percent valve open")
-    print("[e] [steps] extend peep actuator")
-    print("[r] [steps] retract peep actuator")
+    print("[c] [percent] calibrate inspiratory flow with percent valve open")
+    print("[d] [percent] calibrate expiratory flow with percent valve open")
     print("[t] [percent] set max percent solenoid open")
     print("[x] [cross] set peep crossing threshold")
     print("[y] [steps] set number of steps for peep")
@@ -107,11 +106,7 @@ if __name__ == '__main__':
                 continue
             
             (cmd, val) = user.split()
-            if cmd == "e":
-                peep.peep_extend(int(val), 0.001)
-            elif cmd == "r":
-                peep.peep_retract(int(val), 0.001)
-            elif cmd == "c":
+            if cmd == "c":
                 flow_calibrate(1, int(val), 200)
             elif cmd == "d":
                 flow_calibrate(3, int(val), 200)
