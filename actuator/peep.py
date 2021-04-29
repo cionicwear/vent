@@ -17,6 +17,7 @@ from adafruit_ads1x15.analog_in import AnalogIn
 
 PEEP_SLEEP = 20
 PEEP_STROKE = 2.0 # seconds for full peep actuator stroke
+PEEP_DEBOUNCE = 3
 
 class PeepMock:
     def __init__(self):
@@ -35,6 +36,7 @@ class PeepFeedback:
         self.chan = AnalogIn(self.adc, channel)
         self.max_v = 3.3
         self.min_v = 0
+        self.debounce = 0
 
     def curr(self):
         return (self.chan.voltage - self.min_v) * 100 / (self.max_v - self.min_v)
@@ -43,10 +45,15 @@ class PeepFeedback:
         self.peep.throttle = -duty
         sleep_count = PEEP_SLEEP
         sleep_time = PEEP_STROKE/sleep_count
+        self.debounce = 0
         for i in range(0, sleep_count):
             # breakout if I hit max
             if self.chan.voltage > self.max_v:
-                break
+                self.debounce += 1
+                if self.debounce > PEEP_DEBOUNCE:
+                    break
+            else:
+                self.debounce = 0
             # sleep
             time.sleep(sleep_time)
         self.peep.throttle = 0
@@ -55,16 +62,29 @@ class PeepFeedback:
         self.peep.throttle = duty
         sleep_count = PEEP_SLEEP
         sleep_time = PEEP_STROKE/sleep_count
+        self.debounce = 0
         for i in range(0, sleep_count):
             # breakout early if someone asked for close
             if peeping and peeping.value == constants.CLOSED:
                 break
             # breakout if I hit min
             if self.chan.voltage < self.min_v:
-                break
+                self.debounce += 1
+                if self.debounce > PEEP_DEBOUNCE:
+                    break
+            else:
+                self.debounce = 0
             # sleep
             time.sleep(sleep_time)
         self.peep.throttle = 0
+
+    def median(self, count, secs):
+        arr = []
+        for i in range(0, count):
+            arr.append(self.chan.voltage);
+            time.sleep(secs)
+        srtd = sorted(arr)
+        return srtd[int(count/2)]
 
 
 try:
@@ -85,10 +105,10 @@ def peep_calibrate(peeping, err=0.1):
     print("peeper min %f max %f" % (peeper.min_v, peeper.max_v))
     peeper.retract()
     time.sleep(PEEP_STROKE)
-    peeper.min_v = peeper.chan.voltage + err 
+    peeper.min_v = peeper.median(10, 0.1) + err
     peeper.extend()
     time.sleep(PEEP_STROKE)
-    peeper.max_v = peeper.chan.voltage - err
+    peeper.max_v = peeper.median(10, 0.1) - err
     print("peeper min %f max %f" % (peeper.min_v, peeper.max_v))
     
 def peep_cycle(breathing, peeping, wait):
@@ -101,6 +121,7 @@ def peep_cycle(breathing, peeping, wait):
     for i in range(0, sleep_count):
         # breakout early if someone asked for close
         if peeping.value == constants.CLOSED:
+            print("peep closed")
             break
         time.sleep(sleep_time)
     peeper.extend(peeping)

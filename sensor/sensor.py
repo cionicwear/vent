@@ -46,7 +46,7 @@ def check_spontaneous(pressure, breathing, assist):
 
 def check_peep(pressure, breathing, peeping, peepx):
     if breathing.value == constants.EXPIRING and peeping.value != constants.CLOSED and pressure < peepx.value:
-        logging.warning("crosssing peepx on expire")
+        logging.warning("crosssing peepx on expire %d < %d" % (pressure, peepx.value))
         peeping.value = constants.CLOSED
 
 def pressure_prime(pressure_in_1, pressure_in_2, pressure_ex_1, pressure_ex_2):
