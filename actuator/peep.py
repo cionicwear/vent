@@ -58,10 +58,10 @@ class PeepFeedback:
             time.sleep(sleep_time)
         self.peep.throttle = 0
         
-    def retract(self, peeping=None, duty=1.0):
+    def retract(self, peeping=None, duty=1.0, secs=PEEP_STROKE):
         self.peep.throttle = duty
         sleep_count = PEEP_SLEEP
-        sleep_time = PEEP_STROKE/sleep_count
+        sleep_time = secs/sleep_count
         self.debounce = 0
         for i in range(0, sleep_count):
             # breakout early if someone asked for close
@@ -116,7 +116,7 @@ def peep_cycle(breathing, peeping, wait):
     sleep_time = 0.05
     # let everyone know peep open
     peeping.value = constants.OPENED
-    peeper.retract(peeping)
+    peeper.retract(peeping, secs=w)
     sleep_count = (int)(w/sleep_time)
     for i in range(0, sleep_count):
         # breakout early if someone asked for close
